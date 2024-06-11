@@ -225,7 +225,7 @@ class App(ctk.CTk): # App = ctk.CTk
         
         
     def window_config(self):
-        self.title("SPSLab - Controle de Armazenamento")
+        self.title("X")
         x1,y1 = 1000,650
         self.iconbitmap("PPG ICON.ico")
         self.geometry(f"{x1}x{y1}+{(ScreenX-x1)//2}+{(ScreenY-y1)//4}")
@@ -261,9 +261,9 @@ class App(ctk.CTk): # App = ctk.CTk
         
         #Logo
         if self.switch_var.get() =="light":
-            logo = ctk.CTkImage(light_image=Image.open("PPG LOGO2.png"), size=(250*0.25,90*0.25))
+            logo = ctk.CTkImage(light_image=Image.open("X.png"), size=(250*0.25,90*0.25))
         else:
-            logo = ctk.CTkImage(dark_image=Image.open("PPG LOGO2.png"), size=(153*0.40,120*0.40))
+            logo = ctk.CTkImage(dark_image=Image.open("X.png"), size=(153*0.40,120*0.40))
             
         self.logo_Label = ctk.CTkLabel(self, text=None,image=logo)
         self.logo_Label.place(relx=0.02,rely=0.91)
