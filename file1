@@ -1,0 +1,336 @@
+import customtkinter as ctk
+from customtkinter import *
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+
+from reportlab.pdfbase import pdfmetrics 
+from reportlab.pdfbase.ttfonts import TTFont
+
+from datetime import datetime
+
+from csv import reader
+
+from os import listdir, remove, startfile, mkdir, getlogin
+
+# from time import time
+
+from shutil import copy2
+
+from customtkinter import filedialog
+
+from tkinter import *
+from tkinter.ttk import *
+from tkinter import messagebox
+
+from PIL import Image
+
+from random import shuffle
+
+
+
+#GERANDO BASE DE DADOS
+def Data_Gen():
+    
+    listaN = list(range(10000,100000))
+
+    listaN1 = list(range(100000,1000000))
+
+    listaN2 = list(range(1000000,10000000))
+
+    shuffle(listaN)
+
+    shuffle(listaN1)
+
+    shuffle(listaN2)
+
+    Lista_Geral = listaN + listaN1 + listaN2 
+    
+    
+    diret = mkdir('main_files/Label Data-Frame')
+
+
+
+    count = 0
+    while count != 1000-1:
+        with open(f'main_files/Label Data-Frame/Label_Data-{count}.csv','w') as arq:
+            
+            # tempo_inicial = time()
+            
+            for n in range(0+(10000*count),10000+(10000*count)):
+                if n == 10000+(10000*count)-1:
+                    arq.write(f'{Lista_Geral[n]}')
+                    break
+                arq.write(f'{Lista_Geral[n]}\n')
+                # Lista_Geral.pop(0)
+                
+            # tempo_final = time() 
+            # print(f'{tempo_final - tempo_inicial:.1f} segundos')
+            print(f'Label_Data-{count} CRIADO\n')
+            
+            count += 1
+    
+
+
+#OBTENDO O CAMINHO PARA SALVAR PDF EM LOCAL DESEJADO
+def Getting_Path():
+    
+    caminho = filedialog.askdirectory(title = "Selecione sua pasta de destino")
+    
+    return caminho
+    
+
+
+
+#LENDO O ARQUIVO, RETORNANDO LISTA E FAZENDO FOLLOW-UP
+def Reading_Data():
+    
+    lista_arq = listdir('main_files/Label Data-Frame')
+    
+    #CASO OS DADOS TENHAM SE ESGOSTADOS
+    if lista_arq == []:
+        listaNF = []
+        return listaNF
+    
+    #LENDO OS DADOS
+    with open(f'main_files/Label Data-Frame/{lista_arq[0]}','r') as arq:
+        csv_arq = list(reader(arq))
+        
+        listaWT = []
+        for n in range(0,80):
+            listaWT.append(csv_arq[n][0])
+            # print(csv_arq[n][0])
+    
+    #ATUALIZANDO OS ARQUIVOS DE DADOS:
+    if len(csv_arq) > 80:
+        
+        with open(f'main_files/Label Data-Frame/{lista_arq[0]}','w') as arq:
+            
+            N = len(csv_arq[80:])
+            for n in range(0,N):
+                if n == N-1:
+                    arq.write(f'{csv_arq[80:][n][0]}')
+                    break
+                arq.write(f'{csv_arq[80:][n][0]}\n')
+        
+        
+    else:
+        remove(f'main_files/Label Data-Frame/{lista_arq[0]}')
+        
+    
+    return listaWT
+
+
+
+
+#GERANDO O ARQUIVO PDF DE ETIQUETAS COM IDs
+def Label_Model(listaWT,tipo,caminho):
+    
+    #PARÂMETROS DE ENTRADA
+    c = caminho
+    t = tipo #EC,PT,MP or GR
+    l = listaWT
+    
+    #CASO SE ESGOTE O BANCO DE DADOS
+    if l == [] :
+        
+        count = 0
+        lista_pg = []
+        for n in range(0,20):
+            lista_lnh = []
+            for i in range(0,4):
+                # print(count)
+                lista_lnh.append('NoDataFound')
+                count += 1
+                
+        
+            lista_pg.append(lista_lnh)
+    
+    #TRATANDO LISTA DE IDS
+    else:
+        count = 0
+        # lista = []
+        # for j in range(0,80):
+        lista_pg = []
+        for n in range(0,20):
+            lista_lnh = []
+            for i in range(0,4):
+                # print(count)
+                lista_lnh.append(f'{t} '+str(l[count])[0:2]+
+                                      ' '+str(l[count])[2:4]+
+                                      ' '+str(l[count])[4:])
+                count += 1
+                
+        
+            lista_pg.append(lista_lnh)
+        # lista.append(lista_pg)
+    
+    time_mark = str(datetime.now())[:-7].replace(':','•')
+    
+    file_name = f'Etiquetas {time_mark} {getlogin()}.pdf'
+    
+    f = 25.4/72
+    
+    #CRIANDO PDF DE ETIQUETAS COM REPORTLAB
+    pdf = canvas.Canvas(f'main_files/PDFs_done/{file_name}',pagesize = letter)
+    
+    font = 'arialbd.ttf'
+    pdfmetrics.registerFont(TTFont(font, 'main_files/'+font))
+    
+    
+    # count = 0
+    # for pg in lista:
+        
+    count1 = 0
+    for linha in lista_pg:
+        
+        count2 = 0 
+        for cell in linha:
+            pdf.drawBoundary(1, (14.3+0.85)/f+count2*(47.5/f),
+                              254/f-count1*(12.7/f), 44/f, 10.8/f)
+            pdf.setFont(font,18)
+            pdf.drawCentredString((13.2+0.3)/f+(47.5/(2*f))+count2*(47.5/f),
+                                  250.8/f+(12.7/(2*f))-count1*(12.7/f),
+                                  str(lista_pg[count1][count2]))
+            count2 += 1
+        
+        count1 += 1
+            
+        # count += 1
+        # pdf.showPage()
+        
+    pdf.save()
+    
+    #SALVANDO CÓPIA DO ARQUIVO
+    copy2(f'main_files/PDFs_done/{file_name}', c)
+    
+    #ABRINDO ARQUIVO
+    startfile(c+f'/{file_name}')
+
+root = Tk()
+ScreenX,ScreenY = root.winfo_screenwidth(),root.winfo_screenheight()
+root.destroy()
+# print(ScreenX,ScreenY)
+
+
+
+class App(ctk.CTk): # App = ctk.CTk
+    
+    def __init__(self):
+        super().__init__()
+        self.window_config()
+        self.tema_config()
+        self.frontend()
+        
+        
+        
+    def window_config(self):
+        self.title("SPSLab - Controle de Armazenamento")
+        x1,y1 = 1000,650
+        self.iconbitmap("PPG ICON.ico")
+        self.geometry(f"{x1}x{y1}+{(ScreenX-x1)//2}+{(ScreenY-y1)//4}")
+        self._set_appearance_mode("system")
+        # self.resizable(width=False, height=False)
+        self.minsize(width=x1,height=y1)
+        
+    
+    def tema_config(self):
+        
+        self.switch_var = ctk.StringVar(value="system")
+        
+        def set_tema():
+            
+            if self.switch_var.get() =="light":
+                ctk.set_appearance_mode("light")
+                
+            else:
+                ctk.set_appearance_mode("dark")
+                
+                
+        
+        self.switch = ctk.CTkSwitch(self, text = None, variable=self.switch_var, 
+                                    onvalue= "dark", offvalue="light", command=set_tema)
+        self.switch.place(x=25,y=20)
+        
+    
+    def frontend(self):
+        
+        self.Label_logo = ctk.CTkLabel(self, text="                      We protect and\n                      beautify the world™", 
+                                       font=("helvitica",12), justify = "left" )
+        self.Label_logo.place(relx=0.02,rely=0.927)#relx=0.09,rely=0.93)
+        
+        #Logo
+        if self.switch_var.get() =="light":
+            logo = ctk.CTkImage(light_image=Image.open("PPG LOGO2.png"), size=(250*0.25,90*0.25))
+        else:
+            logo = ctk.CTkImage(dark_image=Image.open("PPG LOGO2.png"), size=(153*0.40,120*0.40))
+            
+        self.logo_Label = ctk.CTkLabel(self, text=None,image=logo)
+        self.logo_Label.place(relx=0.02,rely=0.91)
+        
+        
+        self.Label = ctk.CTkLabel(self, text="Sistema de Controle de Armazenamento", font=("arial bold",30))
+        self.Label.pack(pady = 20)
+        
+        self.tabview = ctk.CTkTabview(self,
+                                      width = 700,
+                                      height = 500,
+                                      corner_radius=8,
+                                      border_width=2,
+                                      segmented_button_fg_color="grey",
+                                      segmented_button_selected_color="#037",
+                                      segmented_button_unselected_hover_color="#111",
+                                      segmented_button_unselected_color="#333")
+        self.tabview.pack(pady = 10)
+        self.tabview.add("Controle de Dados")
+        self.tabview.add("Relatório")
+        self.tabview.add("Etiquetas")
+        self.tabview.tab("Etiquetas").grid_columnconfigure(1, weight=1)
+        self.tabview.tab("Controle de Dados").grid_columnconfigure(1, weight=1)
+        self.tabview.tab("Relatório").grid_columnconfigure(1, weight=1)
+        
+        
+        
+        ##### CRINADO TELA DE "Etiquetas" #################################################################
+        
+        self.Hang_Tags_Label = ctk.CTkLabel(self.tabview.tab("Etiquetas"), text="Escolha um Identificador",
+                                            font=("arial bold",30))
+        self.Hang_Tags_Label.pack(pady=20)
+        
+        #criando variável para radiobuttons
+        self.Tag_type = ctk.IntVar(value=0)
+        
+        #criando função para pegar valores de cada etiqueta
+        def tipo():
+            dictionary = {1:'EC',2:'PT',3:'MP',4:'GR'}
+            return dictionary[self.Tag_type.get()]
+        
+        #criando RadioButtons
+        dtry = {1:' EC',2:' PT',3:' MP',4:' GR'}
+        for n in range(1,5):
+            self.RBt = CTkRadioButton(self.tabview.tab("Etiquetas"), text = dtry[n], command = tipo , 
+                                      variable = self.Tag_type , value = n, font=("arial bold",40))
+            self.RBt.pack(pady=12)
+        
+        #definindo função para geração de PDF de etiquetas
+        def Gerar_PDF():
+            
+            if self.Tag_type.get() != 0:
+                
+                caminho = Getting_Path()
+                
+                Label_Model(Reading_Data(), tipo(), caminho)
+            else:
+                messagebox.showerror(title='Erro de Seleção', message='Por favor, selecione\n   uma das opções' )
+            pass
+        
+        #criando botão para geração de PDF de etiquetas
+        self.B1 = CTkButton(self.tabview.tab("Etiquetas"), text = "Gerar Etiquetas",command = Gerar_PDF, 
+                                font=("arial bold",18),fg_color="#ba0606")
+        self.B1.pack(pady = 25)
+
+
+
+if __name__ == "__main__":
+    aplicativo = App()
+    aplicativo.mainloop()
