@@ -212,7 +212,89 @@ ScreenX,ScreenY = root.winfo_screenwidth(),root.winfo_screenheight()
 root.destroy()
 # print(ScreenX,ScreenY)
 
+######## CRIANDO E MANIPULANDO BANCO DE DADOS EM SQL ########################################### 
 
+DB_Name = 'Stock_Data'
+
+#Crinado tabela do banco de dados
+def create_db():
+    connection = sql.connect(f'{DB_Name}.db')
+    blinker = connection.cursor() #como se fosse o cursos do prompt do SQL
+    
+    blinker.execute(f'''
+                   CREATE TABLE IF NOT EXISTS {DB_Name} (
+                       Identificador TEXT,
+                       Id INTENGER PRIMARY KEY,
+                       Responsável TEXT,
+                       Champ_Code TEXT,
+                       Validade TEXT,
+                       Volume TEXT
+                       Time_Stamps_Login
+                       )
+                   ''')
+    connection.comit() #Grava de fato as slterações feitas no DB
+    connection.close()
+    
+#Crinado tabela do banco de dados para rastreabilidae de operações    
+def crate_traceability_table():
+    connection = sql.connect(f'{DB_Name}.db')
+    blinker = connection.cursor() #como se fosse o cursos do prompt do SQL
+    
+    blinker.execute(f'''
+                   CREATE TABLE IF NOT EXISTS {DB_Name}_Traceability (
+                       Identificador TEXT,
+                       Id INTENGER PRIMARY KEY,
+                       Responsável TEXT,
+                       Champ_Code TEXT,
+                       Validade TEXT,
+                       Volume TEXt,
+                       Time_Stamps_Login,
+                       Time_Stamps_Login_Trace)
+                   ''')
+    connection.comit() #Grava de fato as Alterações feitas no DB
+    connection.close()
+    
+    
+#Buscando dados    
+def fetch_itens():
+    
+    connection = sql.connect(f'{DB_Name}.db')
+    blinker = connection.cursor()
+    blinker.execute(f'SELECT * FROM {DB_Name}')
+    itens = blinker.fetchall() #me retorna uma lista de tuplas
+    connection.close()
+    
+    return itens
+
+#Inserindo dados do íten
+def insert_itens(Identificador, ID, Responsável, Champ_Code, Validade, Volume):
+    
+    Time_Stamps_Login = str(datetime.now())+str(getlogin())
+    connection = sql.connect(f'{DB_Name}.db')
+    blinker = connection.cursor()
+    blinker.execute(f'INSERT INTO {DB_Name} (Identificador, Id, Responsável, Champ_Code, Validade, Volume, Time_Stamps_Login)',
+                    (Identificador, Id, Responsável, Champ_Code, Validade, Volume, Time_Stamps_Login))
+    connection.commit()
+    connection.close()
+    
+
+#Deletando dados
+def delete_itens(ID):
+    
+    connection = sql.connect(f'{DB_Name}.db')
+    blinker = connection.cursor()
+    blinker.execute(f'SELECT * FROM {DB_Name} WHERE Id = {ID}')
+    item = blinker.fetchall()
+    blinker.execute(f'''INSERT INTO {DB_Name}_Treceability ({item[0][0]},{item[0][1]},{item[0][2]},{item[0][3]},
+                                                            {item[0][4]},{item[0][5]},{item[0][6]},
+                                                            {str(datetime.now())+str(getlogin())})''')
+    connection.commit()
+    
+    blinker.execute(f'DELETE FROM {DB_Name} WHERE Id = {ID}')
+    connection.commit()
+    connection.close()
+
+#### CRIANDO FRONTEND ##################################################################
 
 class App(ctk.CTk): # App = ctk.CTk
     
