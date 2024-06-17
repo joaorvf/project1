@@ -11,7 +11,7 @@ from datetime import datetime
 
 from csv import reader
 
-from os import listdir, remove, startfile, mkdir, getlogin
+from os import listdir, remove, startfile, mkdir, getlogin, path
 
 # from time import time
 
@@ -22,14 +22,16 @@ from customtkinter import filedialog
 from tkinter import *
 from tkinter.ttk import *
 from tkinter import messagebox
+from tkcalendar import *
 
 from PIL import Image
 
 from random import shuffle
 
+import sqlite3 as sql
 
 
-#GERANDO BASE DE DADOS
+#GERANDO BASE DE DADOS PARA ETIQUETAS
 def Data_Gen():
     
     listaN = list(range(10000,100000))
@@ -165,7 +167,7 @@ def Label_Model(listaWT,tipo,caminho):
             lista_pg.append(lista_lnh)
         # lista.append(lista_pg)
     
-    time_mark = str(datetime.now())[:-7].replace(':','•')
+    time_mark = str(datetime.now())[:-7].replace(':',';')
     
     file_name = f'Etiquetas {time_mark} {getlogin()}.pdf'
     
@@ -207,58 +209,68 @@ def Label_Model(listaWT,tipo,caminho):
     #ABRINDO ARQUIVO
     startfile(c+f'/{file_name}')
 
+# PEGANDO INFORMAÇÕES DA TELA
 root = Tk()
 ScreenX,ScreenY = root.winfo_screenwidth(),root.winfo_screenheight()
 root.destroy()
 # print(ScreenX,ScreenY)
 
-######## CRIANDO E MANIPULANDO BANCO DE DADOS EM SQL ########################################### 
+# VARIÁVEIS IMPORTANTES
+# Lista_Responsaveis = 
 
-DB_Name = 'Stock_Data'
+######## CRIANDO E MANIPULANDO BANCO DE DADOS EM SQL ########################################### 
+DB_Name = 'Stock Data'
+DB_caminho = f'main_files/Data Base/{DB_Name}.db'
+Table_Stock = 'Stock_Data'
+Table_Trace = 'Stock_Data_Trace'
+Table_Resp =  'Stock_Data_Resp'
+Table_Codigos = 'Stock_Data_Cod'
 
 #Crinado tabela do banco de dados
 def create_db():
-    connection = sql.connect(f'{DB_Name}.db')
-    blinker = connection.cursor() #como se fosse o cursos do prompt do SQL
     
-    blinker.execute(f'''
-                   CREATE TABLE IF NOT EXISTS {DB_Name} (
-                       Identificador TEXT,
-                       Id INTENGER PRIMARY KEY,
-                       Responsável TEXT,
-                       Champ_Code TEXT,
-                       Validade TEXT,
-                       Volume TEXT
-                       Time_Stamps_Login
-                       )
-                   ''')
-    connection.comit() #Grava de fato as slterações feitas no DB
-    connection.close()
-    
-#Crinado tabela do banco de dados para rastreabilidae de operações    
-def crate_traceability_table():
-    connection = sql.connect(f'{DB_Name}.db')
-    blinker = connection.cursor() #como se fosse o cursos do prompt do SQL
-    
-    blinker.execute(f'''
-                   CREATE TABLE IF NOT EXISTS {DB_Name}_Traceability (
-                       Identificador TEXT,
-                       Id INTENGER PRIMARY KEY,
-                       Responsável TEXT,
-                       Champ_Code TEXT,
-                       Validade TEXT,
-                       Volume TEXt,
-                       Time_Stamps_Login,
-                       Time_Stamps_Login_Trace)
-                   ''')
-    connection.comit() #Grava de fato as Alterações feitas no DB
-    connection.close()
+    if path.exists(DB_caminho) == False:
+        
+        if path.exists('main_files/Data Base') == False:
+            
+            mkdir('main_files/Data Base')
+        
+        connection = sql.connect(f'{DB_caminho}')
+        blinker = connection.cursor() #como se fosse o cursor do prompt do SQL
+        blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Stock}(   Identificador TEXT,
+                                                                        Id INTEGER PRIMARY KEY,
+                                                                        Responsável TEXT,
+                                                                        Champ_Code NUMERIC,
+                                                                        Validade NUMERIC,
+                                                                        Volume NUMERIC,
+                                                                        Obs TEXT,
+                                                                        Time_Stamps_Login NUMERIC
+                                                                        )""")
+        connection.commit()
+
+        blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Trace}(   Identificador TEXT,
+                                                                        Id INTEGER PRIMARY KEY,
+                                                                        Responsável TEXT,
+                                                                        Código NUMERIC,
+                                                                        Validade NUMERIC,
+                                                                        Volume NUMERIC,
+                                                                        Obs TEXT,
+                                                                        Time_Stamps_Login NUMERIC,
+                                                                        Time_Stamps_Login_Trace NUMERIC
+                                                                        )""")
+        connection.commit()
+        
+        blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Resp}(Responsáveis TEXT)""")
+        connection.commit()
+        
+        blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Codigos}(Códigos NUMERIC)""")
+        connection.commit()
     
     
 #Buscando dados    
 def fetch_itens():
     
-    connection = sql.connect(f'{DB_Name}.db')
+    connection = sql.connect(f'{DB_caminho}')
     blinker = connection.cursor()
     blinker.execute(f'SELECT * FROM {DB_Name}')
     itens = blinker.fetchall() #me retorna uma lista de tuplas
@@ -283,18 +295,33 @@ def delete_itens(ID):
     
     connection = sql.connect(f'{DB_Name}.db')
     blinker = connection.cursor()
-    blinker.execute(f'SELECT * FROM {DB_Name} WHERE Id = {ID}')
+    blinker.execute(f'SELECT * FROM {Table} WHERE Id = {ID}')
     item = blinker.fetchall()
-    blinker.execute(f'''INSERT INTO {DB_Name}_Treceability ({item[0][0]},{item[0][1]},{item[0][2]},{item[0][3]},
-                                                            {item[0][4]},{item[0][5]},{item[0][6]},
-                                                            {str(datetime.now())+str(getlogin())})''')
+    blinker.execute(f"""INSERT INTO {Table}_Traceability (  Identificador,
+                                                            Id,
+                                                            ResponsáveL,
+                                                            Champ_Code,
+                                                            Validade,
+                                                            Volume,
+                                                            Time_Stamps_Login,
+                                                            Time_Stamps_Login_Trace) VALUES
+                                                            ('{item[0][0]}',
+                                                            {item[0][1]},
+                                                            '{item[0][2]}',
+                                                            '{item[0][3]}',
+                                                            '{item[0][4]}',
+                                                            '{item[0][5]}',
+                                                            '{item[0][6]}',
+                                                            '{str(datetime.now())[:19]+' '+str(getlogin())}')""")
     connection.commit()
-    
-    blinker.execute(f'DELETE FROM {DB_Name} WHERE Id = {ID}')
+
+    blinker.execute(f'DELETE FROM {Table} WHERE Id = {ID}')
     connection.commit()
     connection.close()
+    
+    
+    
 
-#### CRIANDO FRONTEND ##################################################################
 
 class App(ctk.CTk): # App = ctk.CTk
     
@@ -307,7 +334,7 @@ class App(ctk.CTk): # App = ctk.CTk
         
         
     def window_config(self):
-        self.title("X")
+        self.title("SPSLab - Controle de Armazenamento")
         x1,y1 = 1000,650
         self.iconbitmap("PPG ICON.ico")
         self.geometry(f"{x1}x{y1}+{(ScreenX-x1)//2}+{(ScreenY-y1)//4}")
@@ -343,9 +370,9 @@ class App(ctk.CTk): # App = ctk.CTk
         
         #Logo
         if self.switch_var.get() =="light":
-            logo = ctk.CTkImage(light_image=Image.open("X.png"), size=(250*0.25,90*0.25))
+            logo = ctk.CTkImage(light_image=Image.open("PPG LOGO2.png"), size=(250*0.25,90*0.25))
         else:
-            logo = ctk.CTkImage(dark_image=Image.open("X.png"), size=(153*0.40,120*0.40))
+            logo = ctk.CTkImage(dark_image=Image.open("PPG LOGO2.png"), size=(153*0.40,120*0.40))
             
         self.logo_Label = ctk.CTkLabel(self, text=None,image=logo)
         self.logo_Label.place(relx=0.02,rely=0.91)
@@ -356,14 +383,14 @@ class App(ctk.CTk): # App = ctk.CTk
         
         self.tabview = ctk.CTkTabview(self,
                                       width = 700,
-                                      height = 500,
+                                      height = 510,
                                       corner_radius=8,
                                       border_width=2,
                                       segmented_button_fg_color="grey",
                                       segmented_button_selected_color="#037",
                                       segmented_button_unselected_hover_color="#111",
                                       segmented_button_unselected_color="#333")
-        self.tabview.pack(pady = 10)
+        self.tabview.pack(pady = 0)
         self.tabview.add("Controle de Dados")
         self.tabview.add("Relatório")
         self.tabview.add("Etiquetas")
@@ -373,7 +400,7 @@ class App(ctk.CTk): # App = ctk.CTk
         
         
         
-        ##### CRINADO TELA DE "Etiquetas" #################################################################
+        ##### CRINADO ABA DE "Etiquetas" #################################################################
         
         self.Hang_Tags_Label = ctk.CTkLabel(self.tabview.tab("Etiquetas"), text="Escolha um Identificador",
                                             font=("arial bold",30))
@@ -410,8 +437,153 @@ class App(ctk.CTk): # App = ctk.CTk
         self.B1 = CTkButton(self.tabview.tab("Etiquetas"), text = "Gerar Etiquetas",command = Gerar_PDF, 
                                 font=("arial bold",18),fg_color="#ba0606")
         self.B1.pack(pady = 25)
-
-
+        
+        #criando Label de Aviso
+        self.Label_aviso = ctk.CTkLabel(self.tabview.tab("Etiquetas"), text="* No momento da impressão selecione o tamanho Carta",
+                                            font=("arial",12))
+        self.Label_aviso.pack()
+        
+        
+        ##### CRIANDO ABA DE "Controle de Dados" #################################################################
+        
+        # criando calendário para seleção de validade
+        self.Calen_Validade = Calendar(self.tabview.tab("Controle de Dados"),selectmode = 'day', 
+                                       date_pattern = 'dd/mm/y',locale="pt_BR" )
+        self.Calen_Validade.place(x=415,y=25)
+        
+        # criando barra de buscar de itens
+        self.Label_Busca_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Busca:', 
+                                              font=("arial",16,"bold"))
+        self.Label_Busca_entry.place(x=18.5,y=0)
+        self.Busca_entry = ctk.CTkEntry(self.tabview.tab("Controle de Dados"), 
+                                        width=200, height=35, font=('arial',14))
+        self.Busca_entry.place(x=18,y=25)
+        
+        # criando botão de gatilho para  buscar de itens
+        def take_entry_Busca():
+            return self.Busca_entry.get()
+        self.Busca_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='🔍',#command =, 
+                                font=("arial",24), height=35, width=45,corner_radius=8, border_color='silver', border_width=1.5 )
+        self.Busca_Button.place(x=18+210,y=25)
+        
+        
+        # criando Label para ComboBox de filtro
+        self.Label_Filtro = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Filtro:', 
+                                         font=("arial",14,"bold"))
+        self.Label_Filtro.place(x=18+210+55.5,y=0)
+        # criando ComboBox de filtro para busca de itens
+        self.Filtro = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['','ID','Identificador','Código','Resp.','Volume','Validade'] ,
+                                        width=120, height=35, font=('arial',16,'bold'),corner_radius=8)
+        self.Filtro.place(x=18.5+210+55,y=25)
+        
+        
+        # criando Label para entry Identificação
+        self.Label_Ident = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Identificador:',
+                                        font=("arial",14,"bold"))
+        self.Label_Ident.place(x=18.5,y=50+40)
+        # criando entry para Identificação
+        self.Identficador = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['','EC','PT','MP','GR'] ,
+                                        width=120, height=35, font=('arial',14,'bold'),corner_radius=8)
+        self.Identficador.place(x=18.5,y=50+65)
+        
+        
+        # criando Label da entry para IDs
+        self.Label_ID_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='ID:', font=("arial",14,"bold"))
+        self.Label_ID_entry.place(x=18.5+135,y=50+40)
+        # criando entry para IDs
+        self.ID_entry = ctk.CTkEntry(self.tabview.tab("Controle de Dados"), 
+                                        width=118, height=35, font=('arial',14))
+        self.ID_entry.place(x=18+135,y=50+65)
+        
+        
+        # criando Label da entry para Volume
+        self.Label_Volume_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Volume:',font=("arial",14,"bold"))
+        self.Label_Volume_entry.place(x=18.5+135+115+10,y=50+40)
+        # criando entry para Volume
+        self.Volume_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),
+                                        values=['','18 L','20 L','500 mL', 'Caixa'],
+                                        width=118, height=35, font=('arial',14,'bold'),corner_radius=8 )
+        self.Volume_entry.place(x=18+135+115+17,y=50+65)
+        
+        
+        # criando Label da entry para Responsáveis
+        self.Label_Responsavel_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Responsável:',
+                                                    font=("arial",14,"bold"))
+        self.Label_Responsavel_entry.place(x=18.5,y=50+40+63)
+        # criando entry para Responsáveis
+        self.Responsavel_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),
+                                        values=['','João Ricardo','Thiago Duarte','Murilo Deny',
+                                                'Marco Alrélio','Rauquel Cristila', 'Ana Cussolim'],
+                                        width=235, height=35, font=('arial',14),corner_radius=8 )
+        self.Responsavel_entry.place(x=18,y=50+65+63)
+        
+        
+        # criando Label da entry para Códigos
+        self.Label_Codigo_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Código:', 
+                                               font=("arial",14,"bold"))
+        self.Label_Codigo_entry.place(x=18.5+265-15,y=50+40+63)
+        # criando Label da entry para Códigos
+        self.Codigo_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['','KT-49-9488'], 
+                                        width=136, height=35, font=('arial',14))
+        self.Codigo_entry.place(x=18+265-17,y=50+65+63)
+        
+        
+        # criando Label da entry para Observações
+        self.Label_OBS_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='OBS:', font=("arial",14,"bold"))
+        self.Label_OBS_entry.place(x=18.5,y=50+40+63+63)
+        # criando entry para Observações
+        self.OBS_entry = ctk.CTkEntry(self.tabview.tab("Controle de Dados"), 
+                                      width=215, height=35, font=('arial',14))
+        self.OBS_entry.place(x=18,y=50+65+63+60)
+        
+        
+        # criando Label da entry para Validade
+        self.Label_Validade_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Validade:', font=("arial",15,"bold"))
+        self.Label_Validade_entry.place(x=18.5+215+67-55,y=50+40+63+63)
+        # criando entry para Validade
+        self.Validade_entry = ctk.CTkEntry(self.tabview.tab("Controle de Dados"), placeholder_text= 'dd/mm/AAAA',
+                                        placeholder_text_color='#333', width=115, height=35, font=('arial',14))
+        self.Validade_entry.place(x=18+215+67-55,y=50+65+63+60)
+        
+        
+        #criando função para pegar data do calendário
+        def take_date():
+            self.Validade_entry.delete(0,END)
+            self.Validade_entry.insert(0, f'{self.Calen_Validade.get_date()}')
+            
+        #criando botão para pegar data do calendário
+        self.Validade_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='🗓',command = take_date, 
+                                font=("arial",24), height=35, width=35,corner_radius=8, border_width=1.5 )#, border_color='silver')
+        self.Validade_Button.place(x=18+215+12+117,y=50+65+63+60)
+        
+        
+        #criando botão para INSERIR dados
+        self.Validade_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='Inserir',command = take_date, 
+                                font=("arial",19), height=40, width=65,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#080278')
+        self.Validade_Button.place(x=18+215+12+117+58,y=50+65+63+54)
+        
+        #
+        #criando botão para DELETAR dados
+        self.Validade_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='🗑',command = take_date, 
+                                font=("arial",24), height=40, width=65,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#a60202', hover_color ='#ba2929' )
+        self.Validade_Button.place(x=18+215+12+117+60+175,y=50+65+63+54)
+        
+        
+        #criando botão para ATUALIZAR dados
+        self.Validade_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='Atualizar',command = take_date, 
+                                font=("arial",18), height=40, width=65,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#02783b', hover_color ='#179c57'  )
+        self.Validade_Button.place(x=18+215+12+117+60+79,y=50+65+63+54)
+            
+        ####  CRIANDO TREEVIEW PARA ABA CONTROLE DE DADOS  #################################################
+        
+        
+        self.TREEVIEW = Treeview(self.tabview.tab("Controle de Dados"),height=200 )
+        self.TREEVIEW.place(x=18,y=285)
+        
+        
 
 if __name__ == "__main__":
     aplicativo = App()
