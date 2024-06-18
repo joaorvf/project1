@@ -249,7 +249,7 @@ def create_db():
         connection.commit()
 
         blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Trace}(   Identificador TEXT,
-                                                                        Id INTEGER PRIMARY KEY,
+                                                                        Id INTEGER,
                                                                         Responsável TEXT,
                                                                         Código NUMERIC,
                                                                         Validade NUMERIC,
@@ -266,7 +266,8 @@ def create_db():
         blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Codigos}(Códigos NUMERIC)""")
         connection.commit()
     
-    
+create_db()    
+
 #Buscando dados    
 def fetch_itens():
     
@@ -462,19 +463,20 @@ class App(ctk.CTk): # App = ctk.CTk
         # criando botão de gatilho para  buscar de itens
         def take_entry_Busca():
             return self.Busca_entry.get()
-        self.Busca_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='🔍',#command =, 
-                                font=("arial",24), height=35, width=45,corner_radius=8, border_color='silver', border_width=1.5 )
-        self.Busca_Button.place(x=18+210,y=25)
+        self.Busca_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='🔍',text_color = 'black',#command =, 
+                                font=("arial",18), height=35, width=35,corner_radius=8, border_color='silver',
+                                border_width=1.5, fg_color = 'silver', hover_color ='white'  ) 
+        self.Busca_Button.place(x=18+208,y=25)
         
         
         # criando Label para ComboBox de filtro
         self.Label_Filtro = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Filtro:', 
                                          font=("arial",14,"bold"))
-        self.Label_Filtro.place(x=18+210+55.5,y=0)
+        self.Label_Filtro.place(x=18.5+210+45,y=0)
         # criando ComboBox de filtro para busca de itens
-        self.Filtro = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['','ID','Identificador','Código','Resp.','Volume','Validade'] ,
-                                        width=120, height=35, font=('arial',16,'bold'),corner_radius=8)
-        self.Filtro.place(x=18.5+210+55,y=25)
+        self.Filtro = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['','ID','Identif.','Código','Resp.','Volume','Validade'] ,
+                                        width=130, height=35, font=('arial',16,'bold'),corner_radius=8)
+        self.Filtro.place(x=18+210+45,y=25)
         
         
         # criando Label para entry Identificação
@@ -498,10 +500,10 @@ class App(ctk.CTk): # App = ctk.CTk
         
         # criando Label da entry para Volume
         self.Label_Volume_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Volume:',font=("arial",14,"bold"))
-        self.Label_Volume_entry.place(x=18.5+135+115+10,y=50+40)
+        self.Label_Volume_entry.place(x=18.5+135+115+17,y=50+40)
         # criando entry para Volume
         self.Volume_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),
-                                        values=['','18 L','20 L','500 mL', 'Caixa'],
+                                        values=['','3,6 L','5 L','18 L','20 L','500 mL','250 mL', 'Caixa'],
                                         width=118, height=35, font=('arial',14,'bold'),corner_radius=8 )
         self.Volume_entry.place(x=18+135+115+17,y=50+65)
         
@@ -552,38 +554,73 @@ class App(ctk.CTk): # App = ctk.CTk
             self.Validade_entry.insert(0, f'{self.Calen_Validade.get_date()}')
             
         #criando botão para pegar data do calendário
-        self.Validade_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='🗓',command = take_date, 
-                                font=("arial",24), height=35, width=35,corner_radius=8, border_width=1.5 )#, border_color='silver')
+        self.Validade_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='🗓',command = take_date,text_color = 'black',#command =, 
+                                font=("arial",18), height=35, width=35,corner_radius=8, #border_color='silver',
+                                border_width=1.5, fg_color = 'silver', hover_color ='white'  ) 
+                               #, border_color='silver')
         self.Validade_Button.place(x=18+215+12+117,y=50+65+63+60)
         
         
         #criando botão para INSERIR dados
-        self.Validade_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='Inserir',command = take_date, 
-                                font=("arial",19), height=40, width=65,corner_radius=8, border_width=1.5 ,#border_color='',
+        self.INSERIR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='➕ Inserir',#command = take_date, 
+                                font=("arial",12), height=30, width=65,corner_radius=8, border_width=1.5 ,#border_color='',
                                 fg_color = '#080278')
-        self.Validade_Button.place(x=18+215+12+117+58,y=50+65+63+54)
+        self.INSERIR_Button.place(x=18+215+12+117+58,y=50+65+63+54)
         
         #
         #criando botão para DELETAR dados
-        self.Validade_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='🗑',command = take_date, 
-                                font=("arial",24), height=40, width=65,corner_radius=8, border_width=1.5 ,#border_color='',
+        self.DELETAR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='✖️ Deletar',#command = take_date, 
+                                font=("arial",12), height=30, width=65,corner_radius=8, border_width=1.5 ,#border_color='',
                                 fg_color = '#a60202', hover_color ='#ba2929' )
-        self.Validade_Button.place(x=18+215+12+117+60+175,y=50+65+63+54)
+        self.DELETAR_Button.place(x=18+215+12+117+60+166,y=50+65+63+54)
         
         
         #criando botão para ATUALIZAR dados
-        self.Validade_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='Atualizar',command = take_date, 
-                                font=("arial",18), height=40, width=65,corner_radius=8, border_width=1.5 ,#border_color='',
+        self.ATUALIZAR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='✏ Atualizar',#command = take_date, 
+                                font=("arial",12), height=30, width=73,corner_radius=8, border_width=1.5 ,#border_color='',
                                 fg_color = '#02783b', hover_color ='#179c57'  )
-        self.Validade_Button.place(x=18+215+12+117+60+79,y=50+65+63+54)
+        self.ATUALIZAR_Button.place(x=18+215+12+117+60+77,y=50+65+63+54)
+        
+        #criando botão limpar
+        self.LIMPAR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text=' 🧹 ',text_color='black',#command = take_date,  
+                                font=("arial",16), height=25, width=30,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#e6a902', hover_color ='#b88702'  )
+        self.LIMPAR_Button.place(x=18,y=65)
             
         ####  CRIANDO TREEVIEW PARA ABA CONTROLE DE DADOS  #################################################
         
         
-        self.TREEVIEW = Treeview(self.tabview.tab("Controle de Dados"),height=200 )
+        #criando um estilo para Treeview
+        self.style = Style(self.tabview.tab("Controle de Dados"))
+        
+        self.style.theme_use('clam')
+        self.style.configure('Treeview', font = ("arial",12),foreground='grey',background='silver',fieldbackround='black')
+        self.style.map('Treeview', background=[('selected','#036491')])
+        
+        #criando Treeview
+        self.TREEVIEW = Treeview(self.tabview.tab("Controle de Dados"),height=7 )
         self.TREEVIEW.place(x=18,y=285)
         
+        #criando colunas
+        self.TREEVIEW['columns'] = ('Identif.','ID','Código','Validade','Responsável','Volume')
+        self.TREEVIEW.column('#0', width=0, stretch=NO)
+        self.TREEVIEW.column('Identif.',anchor=CENTER, width=70)
+        self.TREEVIEW.column('ID',anchor=CENTER, width=110)
+        self.TREEVIEW.column('Código',anchor=CENTER, width=110)
+        self.TREEVIEW.column('Responsável',anchor=CENTER, width=132)
+        self.TREEVIEW.column('Validade',anchor=CENTER, width=112)
+        self.TREEVIEW.column('Volume',anchor=CENTER, width=110)
         
+        #inserindo nome das colunas
+        self.TREEVIEW.heading('Identif.', text='Identif.')
+        self.TREEVIEW.heading('ID', text='ID')
+        self.TREEVIEW.heading('Código', text='Código')
+        self.TREEVIEW.heading('Responsável', text='Responsável')
+        self.TREEVIEW.heading('Validade', text='Validade')
+        self.TREEVIEW.heading('Volume', text='Volume')
+
+
+
 
 if __name__ == "__main__":
     aplicativo = App()
