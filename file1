@@ -535,7 +535,7 @@ class App(ctk.CTk): # App = ctk.CTk
         self.Label_OBS_entry.place(x=18.5,y=50+40+63+63)
         # criando entry para Observações
         self.OBS_entry = ctk.CTkEntry(self.tabview.tab("Controle de Dados"), 
-                                      width=215, height=35, font=('arial',14))
+                                      width=217.5, height=35, font=('arial',14))
         self.OBS_entry.place(x=18,y=50+65+63+60)
         
         
@@ -545,7 +545,7 @@ class App(ctk.CTk): # App = ctk.CTk
         # criando entry para Validade
         self.Validade_entry = ctk.CTkEntry(self.tabview.tab("Controle de Dados"), placeholder_text= 'dd/mm/AAAA',
                                         placeholder_text_color='#333', width=115, height=35, font=('arial',14))
-        self.Validade_entry.place(x=18+215+67-55,y=50+65+63+60)
+        self.Validade_entry.place(x=18+215+67-51.5,y=50+65+63+60)
         
         
         #criando função para pegar data do calendário
@@ -558,7 +558,7 @@ class App(ctk.CTk): # App = ctk.CTk
                                 font=("arial",18), height=35, width=35,corner_radius=8, #border_color='silver',
                                 border_width=1.5, fg_color = 'silver', hover_color ='white'  ) 
                                #, border_color='silver')
-        self.Validade_Button.place(x=18+215+12+117,y=50+65+63+60)
+        self.Validade_Button.place(x=18+215+12+120.5,y=50+65+63+60)
         
         
         #criando botão para INSERIR dados
@@ -584,7 +584,7 @@ class App(ctk.CTk): # App = ctk.CTk
         #criando botão limpar
         self.LIMPAR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text=' 🧹 ',text_color='black',#command = take_date,  
                                 font=("arial",16), height=25, width=30,corner_radius=8, border_width=1.5 ,#border_color='',
-                                fg_color = '#e6a902', hover_color ='#b88702'  )
+                                fg_color = '#e6a902', hover_color ='#b88702'  )#fg_color = 'silver', hover_color ='white')
         self.LIMPAR_Button.place(x=18,y=65)
             
         ####  CRIANDO TREEVIEW PARA ABA CONTROLE DE DADOS  #################################################
