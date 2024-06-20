@@ -239,9 +239,9 @@ def create_db():
         blinker = connection.cursor() #como se fosse o cursor do prompt do SQL
         blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Stock}(   Identificador TEXT,
                                                                         Id INTEGER PRIMARY KEY,
-                                                                        Responsável TEXT,
-                                                                        Champ_Code NUMERIC,
+                                                                        Código NUMERIC,
                                                                         Validade NUMERIC,
+                                                                        Responsável TEXT,
                                                                         Volume NUMERIC,
                                                                         Obs TEXT,
                                                                         Time_Stamps_Login NUMERIC
@@ -250,9 +250,9 @@ def create_db():
 
         blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Trace}(   Identificador TEXT,
                                                                         Id INTEGER,
-                                                                        Responsável TEXT,
                                                                         Código NUMERIC,
                                                                         Validade NUMERIC,
+                                                                        Responsável TEXT,
                                                                         Volume NUMERIC,
                                                                         Obs TEXT,
                                                                         Time_Stamps_Login NUMERIC,
@@ -265,28 +265,44 @@ def create_db():
         
         blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Codigos}(Códigos NUMERIC)""")
         connection.commit()
+        
+        connection.close()
     
 create_db()    
 
 #Buscando dados    
 def fetch_itens():
     
-    connection = sql.connect(f'{DB_caminho}')
+    connection = sql.connect(f"{DB_caminho}")
     blinker = connection.cursor()
-    blinker.execute(f'SELECT * FROM {DB_Name}')
+    blinker.execute(f"SELECT * FROM {Table_Stock}")
     itens = blinker.fetchall() #me retorna uma lista de tuplas
     connection.close()
     
     return itens
 
 #Inserindo dados do íten
-def insert_itens(Identificador, ID, Responsável, Champ_Code, Validade, Volume):
+def insert_itens(Identificador, ID, Responsável, Código, Validade, Volume,OBS):
     
+    connection = sql.connect(f"{DB_caminho}")
     Time_Stamps_Login = str(datetime.now())+str(getlogin())
-    connection = sql.connect(f'{DB_Name}.db')
     blinker = connection.cursor()
-    blinker.execute(f'INSERT INTO {DB_Name} (Identificador, Id, Responsável, Champ_Code, Validade, Volume, Time_Stamps_Login)',
-                    (Identificador, Id, Responsável, Champ_Code, Validade, Volume, Time_Stamps_Login))
+    blinker.execute(f"""INSERT INTO {Table_Stock}(  Identificador,
+                                                    Id,
+                                                    Código,
+                                                    Validade,
+                                                    ResponsáveL,
+                                                    Volume,
+                                                    Obs,
+                                                    Time_Stamps_Login) VALUES
+                                                    ('{Identificador}',
+                                                     {ID},
+                                                    '{Código}',
+                                                    '{Validade}',
+                                                    '{Responsável}',
+                                                    '{Volume}',
+                                                    '{OBS}',
+                                                    '{str(datetime.now())[:19]+' '+str(getlogin())}')""")
     connection.commit()
     connection.close()
     
@@ -300,23 +316,25 @@ def delete_itens(ID):
     item = blinker.fetchall()
     blinker.execute(f"""INSERT INTO {Table}_Traceability (  Identificador,
                                                             Id,
-                                                            ResponsáveL,
-                                                            Champ_Code,
+                                                            Código,
                                                             Validade,
+                                                            ResponsáveL,
                                                             Volume,
+                                                            Obs,
                                                             Time_Stamps_Login,
                                                             Time_Stamps_Login_Trace) VALUES
                                                             ('{item[0][0]}',
-                                                            {item[0][1]},
+                                                             {item[0][1]},
                                                             '{item[0][2]}',
                                                             '{item[0][3]}',
                                                             '{item[0][4]}',
                                                             '{item[0][5]}',
                                                             '{item[0][6]}',
+                                                            '{item[0][7]}',
                                                             '{str(datetime.now())[:19]+' '+str(getlogin())}')""")
     connection.commit()
 
-    blinker.execute(f'DELETE FROM {Table} WHERE Id = {ID}')
+    blinker.execute(f'DELETE FROM {Table_Stock} WHERE Id = {ID}')
     connection.commit()
     connection.close()
     
@@ -484,9 +502,9 @@ class App(ctk.CTk): # App = ctk.CTk
                                         font=("arial",14,"bold"))
         self.Label_Ident.place(x=18.5,y=50+40)
         # criando entry para Identificação
-        self.Identficador = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['','EC','PT','MP','GR'] ,
+        self.Identficador_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['','EC','PT','MP','GR'] ,
                                         width=120, height=35, font=('arial',14,'bold'),corner_radius=8)
-        self.Identficador.place(x=18.5,y=50+65)
+        self.Identficador_entry.place(x=18.5,y=50+65)
         
         
         # criando Label da entry para IDs
@@ -560,9 +578,42 @@ class App(ctk.CTk): # App = ctk.CTk
                                #, border_color='silver')
         self.Validade_Button.place(x=18+215+12+120.5,y=50+65+63+60)
         
+        #criando função para adicionar a TREEVIEW
+        def add_to_TREEVIEW():
+            itens = fetch_itens()
+            self.TREEVIEW.delete(*self.TREEVIEW.get_children())
+            for item in itens:
+                self.TREEVIEW.insert('', END, values=item)
+
+        #criando função para inserção de itens
+        def INSERIR():
+            
+            Identificador = self.Identficador_entry.get()
+            ID = self.ID_entry.get()
+            Responsável = self.Responsavel_entry.get()
+            Código = self.Codigo_entry.get()
+            Validade = self.Validade_entry.get()
+            Volume = self.Volume_entry.get()
+            OBS = self.OBS_entry.get()
+            
+            if ID.isnumeric() == False or len(ID) > 8:
+                messagebox.showerror('Erro ao inserir ID','Por favor, insira um \nnúmero inteiro válido de até \n8 dígitos no campo ID. ')
+            
+            elif len(Validade.split('/')[0])!=2:
+                messagebox.showerror('Erro ao inserir a Validade','Por favor, insira a data de validade \nno padrão dd/mm/AAAA')
+            
+            elif (Identificador == '' and Identificador != 'EC' and Identificador != 'PT' and Identificador != 'MP' and Identificador != 'GR'
+                  or Responsável == '' or Código == '' or Volume == ''):
+                messagebox.showerror('Erro ao inserir dados', 'Por favor, preencha todos \nos campos pertinentes')
+                
+            else:
+                
+                insert_itens(Identificador, ID, Responsável, Código, Validade, Volume, OBS)
+                add_to_TREEVIEW()
+                messebox.showinfo('Inserção bem sucedida','Ítem inserido com sucesso!')
         
         #criando botão para INSERIR dados
-        self.INSERIR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='➕ Inserir',#command = take_date, 
+        self.INSERIR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='➕ Inserir',command = INSERIR , 
                                 font=("arial",12), height=30, width=65,corner_radius=8, border_width=1.5 ,#border_color='',
                                 fg_color = '#080278')
         self.INSERIR_Button.place(x=18+215+12+117+58,y=50+65+63+54)
@@ -589,18 +640,26 @@ class App(ctk.CTk): # App = ctk.CTk
             
         ####  CRIANDO TREEVIEW PARA ABA CONTROLE DE DADOS  #################################################
         
+        #criando frame da treeview
+        self.TREEVIEW_Frame = CTkFrame(self.tabview.tab("Controle de Dados"))
+        self.TREEVIEW_Frame.place(x=18,y=285)
         
         #criando um estilo para Treeview
-        self.style = Style(self.tabview.tab("Controle de Dados"))
+        self.style = Style(self.TREEVIEW_Frame)
         
         self.style.theme_use('clam')
-        self.style.configure('Treeview', font = ("arial",12),foreground='grey',background='silver',fieldbackround='black')
-        self.style.map('Treeview', background=[('selected','#036491')])
+        self.style.configure('Treeview', font = ("arial",9),foreground='black',background='silver',fieldbackround='black')
+        self.style.map('Treeview', background=[('selected','#012563')])#'#036491')])
+        
+        #criando scrollbar para treeview
+        self.TREEVIEW_scrollbar = Scrollbar(self.TREEVIEW_Frame)
+        self.TREEVIEW_scrollbar.pack(side=RIGHT,fill=Y )
         
         #criando Treeview
-        self.TREEVIEW = Treeview(self.tabview.tab("Controle de Dados"),height=7 )
-        self.TREEVIEW.place(x=18,y=285)
-        
+        self.TREEVIEW = Treeview(self.TREEVIEW_Frame,yscrollcommand=self.TREEVIEW_scrollbar.set ,height=7 )
+        self.TREEVIEW.pack()#place(x=18,y=285)
+        #ativando o click da scrollbar
+        self.TREEVIEW_scrollbar.config(command=self.TREEVIEW.yview)
         #criando colunas
         self.TREEVIEW['columns'] = ('Identif.','ID','Código','Validade','Responsável','Volume')
         self.TREEVIEW.column('#0', width=0, stretch=NO)
@@ -618,8 +677,10 @@ class App(ctk.CTk): # App = ctk.CTk
         self.TREEVIEW.heading('Responsável', text='Responsável')
         self.TREEVIEW.heading('Validade', text='Validade')
         self.TREEVIEW.heading('Volume', text='Volume')
-
-
+        
+        
+        add_to_TREEVIEW()
+            
 
 
 if __name__ == "__main__":
