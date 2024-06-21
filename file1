@@ -578,6 +578,35 @@ class App(ctk.CTk): # App = ctk.CTk
                                #, border_color='silver')
         self.Validade_Button.place(x=18+215+12+120.5,y=50+65+63+60)
         
+        #criando função limpar
+        def clear(*clicked):
+            
+            if clicked:
+                self.TREEVIEW.selection_remove(self.TREEVIEW.focus())
+            self.Identficador_entry.set('')
+            self.ID_entry.delete(0,END)
+            self.Codigo_entry.set('')
+            self.Validade_entry.delete(0,END)
+            self.Responsavel_entry.set('')
+            self.Volume_entry.set('')
+
+        #criando função para mostrar dados selecionados
+        def display_data(event):
+            
+            selected_item = self.TREEVIEW.focus()
+            
+            if selected_item:
+                row = self.TREEVIEW.item(selected_item)['values']
+                clear()
+                self.Identficador_entry.set(row[0])
+                self.ID_entry.insert(0,row[1])
+                self.Codigo_entry.set(row[2])
+                self.Validade_entry.insert(0,row[3])
+                self.Responsavel_entry.set(row[4])
+                self.Volume_entry.set(row[5])
+            else:
+                pass
+        
         #criando função para adicionar a TREEVIEW
         def add_to_TREEVIEW():
             itens = fetch_itens()
@@ -633,8 +662,8 @@ class App(ctk.CTk): # App = ctk.CTk
         self.ATUALIZAR_Button.place(x=18+215+12+117+60+77,y=50+65+63+54)
         
         #criando botão limpar
-        self.LIMPAR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text=' 🧹 ',text_color='black',#command = take_date,  
-                                font=("arial",16), height=25, width=30,corner_radius=8, border_width=1.5 ,#border_color='',
+        self.LIMPAR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='✨Limpar',text_color='black',command = lambda: clear(True) ,  
+                                font=("arial",11), height=20, width=30,corner_radius=8, border_width=1.5 ,#border_color='',
                                 fg_color = '#e6a902', hover_color ='#b88702'  )#fg_color = 'silver', hover_color ='white')
         self.LIMPAR_Button.place(x=18,y=65)
             
@@ -664,11 +693,11 @@ class App(ctk.CTk): # App = ctk.CTk
         self.TREEVIEW['columns'] = ('Identif.','ID','Código','Validade','Responsável','Volume')
         self.TREEVIEW.column('#0', width=0, stretch=NO)
         self.TREEVIEW.column('Identif.',anchor=CENTER, width=70)
-        self.TREEVIEW.column('ID',anchor=CENTER, width=110)
+        self.TREEVIEW.column('ID',anchor=CENTER, width=102)
         self.TREEVIEW.column('Código',anchor=CENTER, width=110)
         self.TREEVIEW.column('Responsável',anchor=CENTER, width=132)
         self.TREEVIEW.column('Validade',anchor=CENTER, width=112)
-        self.TREEVIEW.column('Volume',anchor=CENTER, width=110)
+        self.TREEVIEW.column('Volume',anchor=CENTER, width=101)
         
         #inserindo nome das colunas
         self.TREEVIEW.heading('Identif.', text='Identif.')
@@ -678,6 +707,8 @@ class App(ctk.CTk): # App = ctk.CTk
         self.TREEVIEW.heading('Validade', text='Validade')
         self.TREEVIEW.heading('Volume', text='Volume')
         
+        
+        self.TREEVIEW.bind('<ButtonRelease>', display_data)
         
         add_to_TREEVIEW()
             
