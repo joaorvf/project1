@@ -1131,11 +1131,51 @@ class App(ctk.CTk): # App = ctk.CTk
                                             border_width = 2, fg_color='white')
         self.Alteração_Frame.pack(pady=10)
       
+            
+        #criando combobox para correção de códigos velhos
+        self.Label_Alteração_código = ctk.CTkLabel(self.Alteração_Frame, text='Correção de Códigos', 
+                                               font=("arial",22,"bold"))
+        self.Label_Alteração_código.place(x = 30, y =17+5 )                                       
+        self.Label_combo_código = ctk.CTkLabel(self.Alteração_Frame, text='Velho:', 
+                                               font=("arial",14,"bold"))
+        self.Label_combo_código.place(x=30,y=50)
+        #criando combobox para correção de códigos velhos
+        self.combo_código = ctk.CTkComboBox(self.Alteração_Frame,values = self.códigos , 
+                                        width=150, height=35, font=('arial',14))
+        self.combo_código.place(x=29.5,y=50+25)
         
-      
+        #criando combobox para correção de códigos novos
+        self.Label_combo_código = ctk.CTkLabel(self.Alteração_Frame, text='Novo:', 
+                                               font=("arial",14,"bold"))
+        self.Label_combo_código.place(x=30+155,y=50)
+        #criando combobox para correção de códigos novos
+        self.combo_código = ctk.CTkEntry(self.Alteração_Frame, 
+                                        width=135, height=35, font=('arial',14))
+        self.combo_código.place(x=29.5+155,y=50+25)
         
-      #criando combobox para correção de códigos
+        
+        #criando combobox para correção de códigos velhos
+        self.Label_Alteração_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Correção de Responsáveis', 
+                                               font=("arial",22,"bold"))
+        self.Label_Alteração_Resp.place(x = 30, y =17+130 )                                       
+        self.Label_combo_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Velho:', 
+                                               font=("arial",14,"bold"))
+        self.Label_combo_Resp.place(x=30,y=50+125)
+        #criando combobox para correção de códigos velhos
+        self.combo_Resp = ctk.CTkComboBox(self.Alteração_Frame,values = self.Responsáveis , 
+                                        width=150, height=35, font=('arial',14))
+        self.combo_Resp.place(x=29.5,y=50+25+125)
+        
+        #criando combobox para correção de códigos novos
+        self.Label_combo_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Novo:', 
+                                               font=("arial",14,"bold"))
+        self.Label_combo_Resp.place(x=30+155,y=50+125)
+        #criando combobox para correção de códigos novos
+        self.combo_Resp = ctk.CTkEntry(self.Alteração_Frame, 
+                                        width=135, height=35, font=('arial',14))
+        self.combo_Resp.place(x=29.5+155,y=50+25+125)
       
+    
         
         
         
