@@ -516,7 +516,7 @@ def lista_vencidos():
     Base_total = fetch_itens(Table_Stock)
     itens_vencidos = []
     for item in Base_total:
-        if mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple()) <= time():
+        if (mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= time():
             itens_vencidos.append(item)
     return itens_vencidos
 
@@ -530,53 +530,111 @@ def data_correction(data_wrong,data_right,campo,correction_type):
         
         if correction_type == 'Atualizar':
             
-            blinker.execute(f"""UPDATE {Table_Resp} SET Responsáveis = '{data_right}' 
-                            WHERE Responsáveis = '{data_wrong}'""")
-            connection.commit()
+            if resp_exists(data_right) == False:
+                blinker.execute(f"""UPDATE {Table_Resp} SET Responsáveis = '{data_right}' 
+                                WHERE Responsáveis = '{data_wrong}'""")
+                connection.commit()
+            else:
+                blinker.execute(f"DELETE FROM {Table_Resp} WHERE Responsáveis = '{data_wrong}'")
+                connection.commit()
             
             blinker.execute(f"""INSERT INTO {Table_Correções} (old,new,Time_Stamps_Login)
                                 VALUES ('{data_wrong}','{data_right}',
-                                        '{str(datetime.now())[:19]+' '+str(getlogin())+' Responsável'}'""")
+                                        '{str(datetime.now())[:19]+' '+str(getlogin())+' Responsável'}')""")
             connection.commit()
             
             blinker.execute(f"""SELECT * FROM {Table_Stock} WHERE Responsável = '{data_wrong}'""")
             itens = blinker.fetchall()
             
             for item in itens:
+                blinker.execute(f"""INSERT INTO {Table_Trace} ( Identificador,
+                                                                Id,
+                                                                Código,
+                                                                Validade,
+                                                                ResponsáveL,
+                                                                Volume,
+                                                                Obs,
+                                                                Time_Stamps_Login,
+                                                                Time_Stamps_Login_Trace,
+                                                                Status) VALUES
+                                                                ('{item[0]}',
+                                                                 {item[1]},
+                                                                '{item[2]}',
+                                                                '{item[3]}',
+                                                                '{item[4]}',
+                                                                '{item[5]}',
+                                                                '{item[6]}',
+                                                                '{item[7]}',
+                                                                '{str(datetime.now())[:19]+' '+str(getlogin())}',
+                                                                'Correção-Código')""")
+            connection.commit()
+            
+            for item in itens:
                 blinker.execute(f"""UPDATE {Table_Stock} SET Responsável = '{data_right}' 
                                 WHERE Id = {item[1]}""")
             connection.commit()
+            connection.close()
         
         else:
             
             blinker.execute(f"DELETE FROM {Table_Resp} WHERE Responsáveis = '{data_wrong}'")
             connection.commit()
+            connection.close()
     
     else:
         
         if correction_type == 'Atualizar':
             
-            blinker.execute(f"""UPDATE {Table_Códigos} SET Códigos = '{data_right}' 
-                            WHERE Códigos = '{data_wrong}'""")
-            connection.commit()
+            if codigo_exists(data_right) == False:
+                blinker.execute(f"""UPDATE {Table_Códigos} SET Códigos = '{data_right}' 
+                                WHERE Códigos = '{data_wrong}'""")
+                connection.commit()
+            else:
+                blinker.execute(f"DELETE FROM {Table_Códigos} WHERE Códigos = '{data_wrong}'")
+                connection.commit()
             
             blinker.execute(f"""INSERT INTO {Table_Correções} (old,new,Time_Stamps_Login)
                                 VALUES ('{data_wrong}','{data_right}',
-                                        '{str(datetime.now())[:19]+' '+str(getlogin()+' Código')}'""")
+                                        '{str(datetime.now())[:19]+' '+str(getlogin())+' Código'}')""")
             connection.commit()
             
             blinker.execute(f"""SELECT * FROM {Table_Stock} WHERE Código = '{data_wrong}'""")
             itens = blinker.fetchall()
             
             for item in itens:
+                blinker.execute(f"""INSERT INTO {Table_Trace} ( Identificador,
+                                                                Id,
+                                                                Código,
+                                                                Validade,
+                                                                ResponsáveL,
+                                                                Volume,
+                                                                Obs,
+                                                                Time_Stamps_Login,
+                                                                Time_Stamps_Login_Trace,
+                                                                Status) VALUES
+                                                                ('{item[0]}',
+                                                                 {item[1]},
+                                                                '{item[2]}',
+                                                                '{item[3]}',
+                                                                '{item[4]}',
+                                                                '{item[5]}',
+                                                                '{item[6]}',
+                                                                '{item[7]}',
+                                                                '{str(datetime.now())[:19]+' '+str(getlogin())}',
+                                                                'Correção-Responsável')""")
+            connection.commit()
+            
+            for item in itens:
                 blinker.execute(f"""UPDATE {Table_Stock} SET Código = '{data_right}' 
                                 WHERE Id = {item[1]}""")
             connection.commit()
+            connection.close()
         
         else:
             
             blinker.execute(f"DELETE FROM {Table_Códigos} WHERE Códigos = '{data_wrong}'")
             connection.commit()
+            connection.close()
                 
                             
     
@@ -939,13 +997,17 @@ class App(ctk.CTk): # App = ctk.CTk
                 if Código in self.códigos:
                     pass
                 else:
-                    self.Codigo_entry.configure(values = tuple_to_list(fetch_itens(Table_Códigos)))
+                    followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
+                    self.Codigo_entry.configure(values = followup_Códigos)
+                    self.combo_código.configure(values = followup_Códigos)
                 
                 #adicionando novos Nomes a lista de responsáveis
                 if Responsável in self.Responsáveis:
                     pass
                 else:
-                    self.Responsavel_entry.configure(values = tuple_to_list(fetch_itens(Table_Resp)))
+                    followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
+                    self.Responsavel_entry.configure(values = followup_Responsáveis)
+                    self.combo_Resp.configure(values = followup_Responsáveis)
 
                 add_to_TREEVIEW()
                 messagebox.showinfo('Inserção bem sucedida!',f'O item {ID} foi inserido com sucesso!')
@@ -962,15 +1024,23 @@ class App(ctk.CTk): # App = ctk.CTk
         def DELETAR():
             
             ID = self.ID_entry.get()
-            resposta = messagebox.askyesno('Atenção ao deletar', f'Tem certeza que deseja\ndeletar o item (ID: {ID})?')
             
-            if resposta == 1:
-                delete_itens(ID)
-                add_to_TREEVIEW()
-                messagebox.showinfo('Exclusão bem sucedida!',f'Item {ID} deletado com sucesso.')
-                
+            
+            if ID.isnumeric() == False or len(ID) > 8 or len(ID) < 5:
+                messagebox.showerror('Erro ao deletar ID','Por favor, selecione \no item que deseja deletar.\n\nOu, insira um número inteiro \nválido de 5 a 8 dígitos \nno campo ID.')
+            
+            elif id_exists(ID) == False:
+                messagebox.showerror('Erro ao deletar ID',f'Não é possível deletar o \nitem pois o ID {ID} \nainda não foi cadastrado.\n\nPor favor, tente deletar apenas \nitens existentes.')
             else:
-                pass
+                resposta = messagebox.askyesno('Atenção ao deletar', f'Tem certeza que deseja\ndeletar o item (ID: {ID})?')
+                
+                if resposta == 1:
+                    delete_itens(ID)
+                    add_to_TREEVIEW()
+                    messagebox.showinfo('Exclusão bem sucedida!',f'Item {ID} deletado com sucesso.')
+                    
+                else:
+                    pass
             
         #criando botão para DELETAR dados
         self.DELETAR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='✖️ Deletar',command = DELETAR, 
@@ -991,10 +1061,10 @@ class App(ctk.CTk): # App = ctk.CTk
             OBS = self.OBS_entry.get().strip()
             
             if ID.isnumeric() == False or len(ID) > 8 or len(ID) < 5:
-                messagebox.showerror('Erro ao inserir ID','Por favor, insira um número \ninteiro válido de 5 a 8 dígitos \nno campo ID. ')
+                messagebox.showerror('Erro ao atualizar ID','Por favor, selecione \no item que deseja atualizar.\n\nOu, insira o ID que deseja\natualizar no campo ID. ')
             
             elif id_exists(ID) == False:
-                messagebox.showerror('Erro ao inserir ID',f'Não é possível atualizar o \nitem pois o ID {ID} \nainda não foi cadastrado.\n\nPor favor, atualize apenas itens \nexistentes.')
+                messagebox.showerror('Erro ao atualizar ID',f'Não é possível atualizar o \nitem pois o ID {ID} \nainda não foi cadastrado.\n\nPor favor, atualize apenas itens \nexistentes.')
             
             elif ( (len(Validade.split('/')[0])!=2 or Validade.split('/')[0].isdigit == False) or
                    (len(Validade.split('/')[1])!=2 or Validade.split('/')[1].isdigit == False) or
@@ -1013,13 +1083,17 @@ class App(ctk.CTk): # App = ctk.CTk
                 if Código in self.códigos:
                     pass
                 else:
-                    self.Codigo_entry.configure(values = tuple_to_list(fetch_itens(Table_Códigos)))
+                    followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
+                    self.Codigo_entry.configure(values = followup_Códigos)
+                    self.combo_código.configure(values = followup_Códigos)
                 
                 #adicionando novos Nomes a lista de responsáveis
                 if Responsável in self.Responsáveis:
                     pass
                 else:
-                    self.Responsavel_entry.configure(values = tuple_to_list(fetch_itens(Table_Resp)))
+                    followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
+                    self.Responsavel_entry.configure(values = followup_Responsáveis)
+                    self.combo_Resp.configure(values = followup_Responsáveis)
 
                 add_to_TREEVIEW()
                 messagebox.showinfo('Atualização bem sucedida!',f'O item {ID} foi atualizado com sucesso!')
@@ -1132,11 +1206,11 @@ class App(ctk.CTk): # App = ctk.CTk
         self.Alteração_Frame.pack(pady=10)
       
             
-        #criando combobox para correção de códigos velhos
-        self.Label_Alteração_código = ctk.CTkLabel(self.Alteração_Frame, text='Correção de Códigos', 
-                                               font=("arial",22,"bold"))
+        #criando Label para correção de códigos velhos
+        self.Label_Alteração_código = ctk.CTkLabel(self.Alteração_Frame, text='Correção de Códigos', text_color='#4e4f4f',
+                                               font=("arial",16,"bold"))
         self.Label_Alteração_código.place(x = 30, y =17+5 )                                       
-        self.Label_combo_código = ctk.CTkLabel(self.Alteração_Frame, text='Velho:', 
+        self.Label_combo_código = ctk.CTkLabel(self.Alteração_Frame, text='Velho:', text_color='black',
                                                font=("arial",14,"bold"))
         self.Label_combo_código.place(x=30,y=50)
         #criando combobox para correção de códigos velhos
@@ -1144,42 +1218,181 @@ class App(ctk.CTk): # App = ctk.CTk
                                         width=150, height=35, font=('arial',14))
         self.combo_código.place(x=29.5,y=50+25)
         
-        #criando combobox para correção de códigos novos
-        self.Label_combo_código = ctk.CTkLabel(self.Alteração_Frame, text='Novo:', 
+        #criando Label Novo para correção de códigos novos
+        self.Label_combo_código = ctk.CTkLabel(self.Alteração_Frame, text='Novo:', text_color='black',
                                                font=("arial",14,"bold"))
         self.Label_combo_código.place(x=30+155,y=50)
         #criando combobox para correção de códigos novos
-        self.combo_código = ctk.CTkEntry(self.Alteração_Frame, 
+        self.entry_código_novo = ctk.CTkEntry(self.Alteração_Frame, 
                                         width=135, height=35, font=('arial',14))
-        self.combo_código.place(x=29.5+155,y=50+25)
+        self.entry_código_novo.place(x=29.5+155,y=50+25)
         
         
-        #criando combobox para correção de códigos velhos
-        self.Label_Alteração_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Correção de Responsáveis', 
-                                               font=("arial",22,"bold"))
+        #criando Label para correção de responsáveis velhos
+        self.Label_Alteração_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Correção de Responsáveis', text_color='#4e4f4f',
+                                               font=("arial",16,"bold"))
         self.Label_Alteração_Resp.place(x = 30, y =17+130 )                                       
-        self.Label_combo_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Velho:', 
+        self.Label_combo_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Velho:', text_color='black',
                                                font=("arial",14,"bold"))
         self.Label_combo_Resp.place(x=30,y=50+125)
-        #criando combobox para correção de códigos velhos
-        self.combo_Resp = ctk.CTkComboBox(self.Alteração_Frame,values = self.Responsáveis , 
+        #criando combobox para correção de responsáveis velhos
+        self.combo_Resp = ctk.CTkComboBox(self.Alteração_Frame,values = self.Responsáveis ,
                                         width=150, height=35, font=('arial',14))
         self.combo_Resp.place(x=29.5,y=50+25+125)
         
-        #criando combobox para correção de códigos novos
-        self.Label_combo_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Novo:', 
+        #criando Label da combobox para correção de responsáveis novos
+        self.Label_combo_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Novo:', text_color='black',
                                                font=("arial",14,"bold"))
         self.Label_combo_Resp.place(x=30+155,y=50+125)
-        #criando combobox para correção de códigos novos
-        self.combo_Resp = ctk.CTkEntry(self.Alteração_Frame, 
+        #criando combobox para correção de responsáveis novos
+        self.entry_Resp_novo = ctk.CTkEntry(self.Alteração_Frame, 
                                         width=135, height=35, font=('arial',14))
-        self.combo_Resp.place(x=29.5+155,y=50+25+125)
+        self.entry_Resp_novo.place(x=29.5+155,y=50+25+125)
       
     
-        
-        
-        
+        #criando função para atualização de dados da aba correção
+        def CORRIGIR_Atualizar():
             
+            Código_wrong = self.combo_código.get()
+            Código_right = self.entry_código_novo.get().upper().strip()
+            
+            Resp_wrong = self.combo_Resp.get()
+            Resp_right = self.entry_Resp_novo.get().title().strip()
+            
+            
+            
+            if Código_wrong == ''  and Código_right == '' and Resp_wrong == '' and Resp_right == '':
+                messagebox.showerror('Erro ao Corrigir','Por favor, selecione o parâmetro \nque deseja corrigir.')
+                  
+            if Código_wrong != '' and Resp_wrong != '':
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas uma \ncategoria por vez.')
+                
+            #condição código correto
+            elif Código_wrong != ''  and Código_right != '' and Resp_wrong == '' and Resp_right == '':
+                
+                if codigo_exists(Código_wrong) == True:
+                    
+                    data_correction(Código_wrong, Código_right, 'Códigos', 'Atualizar')
+                    
+                    add_to_TREEVIEW()
+                    
+                    followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
+                    self.Codigo_entry.configure(values = followup_Códigos)
+                    self.combo_código.configure(values = followup_Códigos)
+                    
+                    messagebox.showinfo('Atualização bem sucedida!',f'O item {Código_wrong} foi atualizado \npara {Código_right} com sucesso!')
+                
+                else:
+                    messagebox.showerror('Erro ao Corrigir','Por favor, selecione um código \njá cadastrado.')
+                
+            #condição responsável correto
+            elif Código_wrong == ''  and Código_right == '' and Resp_wrong != '' and Resp_right != '':
+                
+                if resp_exists(Resp_wrong) == True:
+                    
+                    data_correction(Resp_wrong, Resp_right, 'Responsáveis', 'Atualizar')
+                    
+                    add_to_TREEVIEW()
+                    
+                    followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
+                    self.Responsavel_entry.configure(values = followup_Responsáveis)
+                    self.combo_Resp.configure(values = followup_Responsáveis)
+                    
+                    messagebox.showinfo('Atualização bem sucedida!',f'O item {Resp_wrong} foi atualizado \npara {Resp_right} com sucesso!')
+                
+                else:
+                    messagebox.showerror('Erro ao Corrigir','Por favor, selecione um responsável \njá cadastrado.')
+            
+            else:
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas uma \ncategoria por vez.')
+                
+        
+        #criando função para exclusão de dados da aba correção
+        def CORRIGIR_Deletar():
+            
+            Código_wrong = self.combo_código.get()
+            Código_right = self.entry_código_novo.get().upper().strip()
+            
+            Resp_wrong = self.combo_Resp.get()
+            Resp_right = self.entry_Resp_novo.get().title().strip()
+            
+            
+            
+            if Código_wrong == '' and Resp_wrong == '':
+                messagebox.showerror('Erro ao Corrigir','Por favor, selecione o parâmetro \nque deseja corrigir.')
+                  
+            if Código_wrong != '' and Resp_wrong != '':
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas uma \ncategoria por vez.')
+                  
+            #condição código correto
+            elif Código_wrong != '':
+                
+                if codigo_exists(Código_wrong) == True:
+                    
+                    data_correction(Código_wrong, Código_right, 'Códigos', 'Deletar')
+                    
+                    add_to_TREEVIEW()
+                    
+                    followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
+                    self.Codigo_entry.configure(values = followup_Códigos)
+                    self.combo_código.configure(values = followup_Códigos)
+                    
+                    messagebox.showinfo('Exclusão bem sucedida!',f'O item {Código_wrong} foi excluído com sucesso!')
+                
+                else:
+                    messagebox.showerror('Erro ao Corrigir','Por favor, selecione um código \njá cadastrado.')
+                
+            #condição responsável correto
+            elif Resp_wrong != '':
+                
+                if resp_exists(Resp_wrong) == True:
+                    
+                    data_correction(Resp_wrong, Resp_right, 'Responsáveis', 'Deletar')
+                    
+                    add_to_TREEVIEW()
+                    
+                    followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
+                    self.Responsavel_entry.configure(values = followup_Responsáveis)
+                    self.combo_Resp.configure(values = followup_Responsáveis)
+                    
+                    messagebox.showinfo('Exclusão bem sucedida!',f'O item {Resp_wrong} foi excluído com sucesso!')
+                
+                else:
+                    messagebox.showerror('Erro ao Corrigir','Por favor, selecione um responsável \njá cadastrado.')
+            
+            else:
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas uma \ncategoria por vez.')
+                
+        #criando botão para ATUALIZAR dados
+        self.ATUALIZAR_Button_correções = ctk.CTkButton(self.Alteração_Frame,text='⬆ Atualizar',command = CORRIGIR_Atualizar , 
+                                font=("arial",19), height=35, width=110,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#02783b', hover_color ='#179c57'  )
+        self.ATUALIZAR_Button_correções.place(x=60,y=50+65+63+54+35)
+        
+          
+        #criando botão deletar na aba correções
+        self.DELETAR_Button_correções = ctk.CTkButton(self.Alteração_Frame,text='❌ Deletar',command = CORRIGIR_Deletar , 
+                                font=("arial",19), height=35, width=100,corner_radius=8, border_width=1.5 ,
+                                fg_color = '#a60202', hover_color ='#ba2929' )
+        self.DELETAR_Button_correções.place(x=185,y=50+65+63+54+35)
+        
+        
+        #criando função para limpar aba correções
+        def clear_corrections():
+            
+            self.combo_código.set('')
+            self.entry_código_novo.delete(0,END)
+        
+            self.combo_Resp.get.set('')
+            self.entry_Resp_novo.delete(0,END)
+            
+        
+        
+        #criando botão limpar
+        self.LIMPAR_Button_correções = ctk.CTkButton(self.Alteração_Frame,text='✨Limpar',text_color='black',command = clear_corrections ,  
+                                font=("arial",17), height=30, width=50,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#e6a902', hover_color ='#b88702'  )#fg_color = 'silver', hover_color ='white')
+        self.LIMPAR_Button_correções.place(x=130,y=330)   
 
 
 if __name__ == "__main__":
