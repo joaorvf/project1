@@ -520,6 +520,27 @@ def lista_vencidos():
             itens_vencidos.append(item)
     return itens_vencidos
 
+#função para retornar uma lista de itens vencidos em um determinado periodo de tempo futuro
+def lista_vencidos_em(dias):
+    Base_total = fetch_itens(Table_Stock)
+    itens_vencidos = []
+    for item in Base_total:
+        if  (
+            ((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) >= time()) 
+            and ((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= (time() + (86400*dias)))
+            ):
+            itens_vencidos.append(item)
+    return itens_vencidos
+
+#função para retornar uma lista de itens vencidos em um determinado periodo de tempo futuro
+def lista_vencidos_daqui(dias):
+    Base_total = fetch_itens(Table_Stock)
+    itens_vencidos = []
+    for item in Base_total:
+        if (mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) >= (time() + (86400*(dias-1))+86399):
+            itens_vencidos.append(item)
+    return itens_vencidos
+
 #criando função para correção dos dados de responsáveis e códigos
 def data_correction(data_wrong,data_right,campo,correction_type):
     
@@ -791,7 +812,7 @@ class App(ctk.CTk): # App = ctk.CTk
                                          font=("arial",14,"bold"))
         self.Label_Filtro.place(x=18.5+210+45,y=0)
         # criando ComboBox de filtro para busca de itens
-        self.Filtro_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['','ID','Vencidos','Identif.','Código','Resp.','Validade','Volume'] ,
+        self.Filtro_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['','ID','Vencidos','Vence em','Vence depois de','Identif.','Código','Resp.','Validade','Volume'] ,
                                         width=130, height=35, font=('arial',14,'bold'),corner_radius=8)
         self.Filtro_entry.place(x=18+210+45,y=25)
         
@@ -938,6 +959,20 @@ class App(ctk.CTk): # App = ctk.CTk
             
             if self.Busca_entry.get().upper() == 'VENCIDOS' or self.Filtro_entry.get() == 'Vencidos':
                 itens = lista_vencidos()
+                self.TREEVIEW.delete(*self.TREEVIEW.get_children())
+                for item in itens:
+                    self.TREEVIEW.insert('', END, values=item)
+                return len(itens)
+            
+            elif self.Filtro_entry.get() == 'Vence em':
+                itens = lista_vencidos_em(int(self.Busca_entry.get().replace('dias','').strip()))
+                self.TREEVIEW.delete(*self.TREEVIEW.get_children())
+                for item in itens:
+                    self.TREEVIEW.insert('', END, values=item)
+                return len(itens)
+            
+            elif self.Filtro_entry.get() == 'Vence depois de':
+                itens = lista_vencidos_daqui(int(self.Busca_entry.get().replace('dias','').strip()))
                 self.TREEVIEW.delete(*self.TREEVIEW.get_children())
                 for item in itens:
                     self.TREEVIEW.insert('', END, values=item)
@@ -1115,11 +1150,39 @@ class App(ctk.CTk): # App = ctk.CTk
         #criando função gatilho para botão de busca
         def busca_button():
             
-            lista_filtro = ['ID','Vencidos','Identif.','Código','Resp.','Validade','Volume']
+            lista_filtro = ['ID','Vencidos','Vence em','Vence depois de','Identif.','Código','Resp.','Validade','Volume']
             
             if self.Busca_entry.get().upper() == 'VENCIDOS' or self.Filtro_entry.get() == 'Vencidos':
                 resultado = add_to_TREEVIEW()
                 messagebox.showinfo('Resultado da busca', f'Foram encontrados {resultado} \nitens vencidos.')
+                
+            elif self.Filtro_entry.get() == 'Vence em':
+                if self.Busca_entry.get().replace('dias','').strip().isnumeric() == True: 
+                    busca = self.Busca_entry.get().replace('dias','').strip()
+                    resultado = add_to_TREEVIEW()
+                    if resultado > 1:
+                        messagebox.showinfo('Resultado da busca', f'Foram encontrados {resultado} \nitens que vencerão nos\npróximos {busca} dias.')
+                    elif resultado == 0:
+                        messagebox.showinfo('Resultado da busca', 'Nenhum item foi encontrado.')
+                    else:
+                        messagebox.showinfo('Resultado da busca', f'Foi encontrado apenas 1 \nitem que vencerá nos\npróximos {busca} dias.')
+                
+                else:
+                    messagebox.showerror('Erro ao buscar','Por favor, degite um número de dias\nválido para realizar a busca.')
+            
+            elif self.Filtro_entry.get() == 'Vence depois de':
+                if self.Busca_entry.get().replace('dias','').strip().isnumeric() == True: 
+                    busca = self.Busca_entry.get().replace('dias','').strip()
+                    resultado = add_to_TREEVIEW()
+                    if resultado > 1:
+                        messagebox.showinfo('Resultado da busca', f'Foram encontrados {resultado} \nitens que vencerão\ndaqui {busca} dias.')
+                    elif resultado == 0:
+                        messagebox.showinfo('Resultado da busca', 'Nenhum item foi encontrado.')
+                    else:
+                        messagebox.showinfo('Resultado da busca', f'Foi encontrado apenas 1 \nitem que vencerá\ndaqui {busca} dias.')
+                
+                else:
+                    messagebox.showerror('Erro ao buscar','Por favor, degite um número de dias\nválido para realizar a busca.')
             
             elif self.Filtro_entry.get() in lista_filtro and self.Busca_entry.get() != '':
                 resultado = add_to_TREEVIEW()
@@ -1270,41 +1333,85 @@ class App(ctk.CTk): # App = ctk.CTk
             #condição código correto
             elif Código_wrong != ''  and Código_right != '' and Resp_wrong == '' and Resp_right == '':
                 
-                if codigo_exists(Código_wrong) == True:
+                if Código_wrong == Código_right:
                     
-                    data_correction(Código_wrong, Código_right, 'Códigos', 'Atualizar')
+                    messagebox.showerror('Erro ao Corrigir','Não é possível atualizar parâmetros\npara o mesmo valor.')
                     
-                    add_to_TREEVIEW()
-                    
-                    followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
-                    self.Codigo_entry.configure(values = followup_Códigos)
-                    self.combo_código.configure(values = followup_Códigos)
-                    
-                    messagebox.showinfo('Atualização bem sucedida!',f'O item {Código_wrong} foi atualizado \npara {Código_right} com sucesso!')
-                
                 else:
-                    messagebox.showerror('Erro ao Corrigir','Por favor, selecione um código \njá cadastrado.')
+                
+                    if codigo_exists(Código_wrong) == True:
+                        
+                        resposta = messagebox.askyesno('Atenção ao atualizar', f'Tem certeza que deseja\natualizar o código {Código_wrong} \npara {Código_right}?\n\nA atualização deve ser feita apenas\npara parâmetros que foram\ncadastrados com erro de digitação.\n\nNão use para corrigir itens\ncadastrados de forma incorreta!')
+                        
+                        if resposta == 1:
+                            data_correction(Código_wrong, Código_right, 'Códigos', 'Atualizar')
+                            
+                            add_to_TREEVIEW()
+                            
+                            followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
+                            self.Codigo_entry.configure(values = followup_Códigos)
+                            self.combo_código.configure(values = followup_Códigos)
+                            
+                            messagebox.showinfo('Atualização bem sucedida!',f'O código {Código_wrong} foi atualizado \npara {Código_right} com sucesso!')
+                        
+                        else:
+                            pass
+                        
+                    else:
+                        messagebox.showerror('Erro ao Corrigir','Por favor, selecione um código \njá cadastrado.')
+            
                 
             #condição responsável correto
             elif Código_wrong == ''  and Código_right == '' and Resp_wrong != '' and Resp_right != '':
                 
-                if resp_exists(Resp_wrong) == True:
+                if Resp_wrong == Resp_right:
                     
-                    data_correction(Resp_wrong, Resp_right, 'Responsáveis', 'Atualizar')
+                    messagebox.showerror('Erro ao Corrigir','Não é possível atualizar parâmetros\npara o mesmo valor.')
                     
-                    add_to_TREEVIEW()
-                    
-                    followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
-                    self.Responsavel_entry.configure(values = followup_Responsáveis)
-                    self.combo_Resp.configure(values = followup_Responsáveis)
-                    
-                    messagebox.showinfo('Atualização bem sucedida!',f'O item {Resp_wrong} foi atualizado \npara {Resp_right} com sucesso!')
-                
                 else:
-                    messagebox.showerror('Erro ao Corrigir','Por favor, selecione um responsável \njá cadastrado.')
+                
+                    if resp_exists(Resp_wrong) == True:
+                        
+                        resposta = messagebox.askyesno('Atenção ao atualizar', f'Tem certeza que deseja\natualizar o responsável {Resp_wrong} \npara {Resp_right}?\n\nA atualização deve ser feita apenas \npara parâmetros que foram \ncadastrados com erro de digitação.\n\nNão use para corrigir itens\ncadastrados de forma incorreta!')
+                        
+                        if resposta == 1:
+                          
+                            data_correction(Resp_wrong, Resp_right, 'Responsáveis', 'Atualizar')
+                            
+                            add_to_TREEVIEW()
+                            
+                            followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
+                            self.Responsavel_entry.configure(values = followup_Responsáveis)
+                            self.combo_Resp.configure(values = followup_Responsáveis)
+                            
+                            messagebox.showinfo('Atualização bem sucedida!',f'O responsável {Resp_wrong} foi atualizado \npara {Resp_right} com sucesso!')
+                        
+                        else:
+                            pass
+                        
+                    else:
+                        messagebox.showerror('Erro ao Corrigir','Por favor, selecione um responsável \njá cadastrado.')
+                        
+            # elif Código_right != '' and Resp_wrong != '' and Resp_right != '':
             
+            elif Resp_wrong == '' and Resp_right == '' and Código_wrong != ''  and Código_right == '' :
+                
+                messagebox.showerror('Erro ao Corrigir','Não é possível cadastrar um\nparâmetro vazio.')
+            
+            elif Resp_wrong == '' and Resp_right == '' and Código_wrong == ''  and Código_right != '' :
+                
+                messagebox.showerror('Erro ao Corrigir','Por favor, selecione o parâmetro \nque deseja corrigir.')
+            
+            elif Resp_wrong != '' and Resp_right == '' and Código_wrong == ''  and Código_right == '' :
+                
+                messagebox.showerror('Erro ao Corrigir','Não é possível cadastrar um\nparâmetro vazio.')
+            
+            elif Resp_wrong == '' and Resp_right != '' and Código_wrong == ''  and Código_right == '' :
+                
+                messagebox.showerror('Erro ao Corrigir','Por favor, selecione o parâmetro \nque deseja corrigir.')
+    
             else:
-                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas uma \ncategoria por vez.')
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas uma\ncategoria por vez.')
                 
         
         #criando função para exclusão de dados da aba correção
@@ -1329,15 +1436,22 @@ class App(ctk.CTk): # App = ctk.CTk
                 
                 if codigo_exists(Código_wrong) == True:
                     
-                    data_correction(Código_wrong, Código_right, 'Códigos', 'Deletar')
+                    resposta = messagebox.askyesno('Atenção ao deletar', f'Tem certeza que deseja\ndeletar o código {Código_wrong}?\n\nA exclusão deve ser feita apenas para\nparâmetros que foram cadastrados\ncom erro de digitação.')
                     
-                    add_to_TREEVIEW()
+                    if resposta == 1:
                     
-                    followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
-                    self.Codigo_entry.configure(values = followup_Códigos)
-                    self.combo_código.configure(values = followup_Códigos)
+                        data_correction(Código_wrong, Código_right, 'Códigos', 'Deletar')
+                        
+                        add_to_TREEVIEW()
+                        
+                        followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
+                        self.Codigo_entry.configure(values = followup_Códigos)
+                        self.combo_código.configure(values = followup_Códigos)
+                        
+                        messagebox.showinfo('Exclusão bem sucedida!',f'O item {Código_wrong} foi excluído com sucesso!')
                     
-                    messagebox.showinfo('Exclusão bem sucedida!',f'O item {Código_wrong} foi excluído com sucesso!')
+                    else:
+                        pass
                 
                 else:
                     messagebox.showerror('Erro ao Corrigir','Por favor, selecione um código \njá cadastrado.')
@@ -1347,16 +1461,23 @@ class App(ctk.CTk): # App = ctk.CTk
                 
                 if resp_exists(Resp_wrong) == True:
                     
-                    data_correction(Resp_wrong, Resp_right, 'Responsáveis', 'Deletar')
+                    resposta = messagebox.askyesno('Atenção ao deletar', f'Tem certeza que deseja\ndeletar o responsável {Resp_wrong}?\n\nA exclusão deve ser feita apenas para\nparâmetros que foram cadastrados\ncom erro de digitação.')
                     
-                    add_to_TREEVIEW()
+                    if resposta == 1:
                     
-                    followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
-                    self.Responsavel_entry.configure(values = followup_Responsáveis)
-                    self.combo_Resp.configure(values = followup_Responsáveis)
+                        data_correction(Resp_wrong, Resp_right, 'Responsáveis', 'Deletar')
+                        
+                        add_to_TREEVIEW()
+                        
+                        followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
+                        self.Responsavel_entry.configure(values = followup_Responsáveis)
+                        self.combo_Resp.configure(values = followup_Responsáveis)
+                        
+                        messagebox.showinfo('Exclusão bem sucedida!',f'O item {Resp_wrong} foi excluído com sucesso!')
                     
-                    messagebox.showinfo('Exclusão bem sucedida!',f'O item {Resp_wrong} foi excluído com sucesso!')
-                
+                    else:
+                        pass
+                    
                 else:
                     messagebox.showerror('Erro ao Corrigir','Por favor, selecione um responsável \njá cadastrado.')
             
@@ -1383,7 +1504,7 @@ class App(ctk.CTk): # App = ctk.CTk
             self.combo_código.set('')
             self.entry_código_novo.delete(0,END)
         
-            self.combo_Resp.get.set('')
+            self.combo_Resp.set('')
             self.entry_Resp_novo.delete(0,END)
             
         
