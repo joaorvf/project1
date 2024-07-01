@@ -2,18 +2,14 @@ import customtkinter as ctk
 from customtkinter import *
 
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, A4
 
 from reportlab.pdfbase import pdfmetrics 
 from reportlab.pdfbase.ttfonts import TTFont
 
-from datetime import datetime
-
 from csv import reader
 
 from os import listdir, remove, startfile, mkdir, getlogin, path
-
-# from time import time
 
 from shutil import copy2
 
@@ -326,6 +322,40 @@ def buscar(Filtro,Valor_Busca):
     connection.close()
     
     return itens
+
+#criando função para analisar dados de responsáveis específicos
+def busca_relatório(Valor_Busca):
+    
+    connection = sql.connect(f"{DB_caminho}")
+    blinker = connection.cursor()
+    blinker.execute(f"SELECT * FROM {Table_Stock} WHERE Responsável = '{Valor_Busca}'")
+    itens = blinker.fetchall()
+    connection.close()
+    return itens
+
+#criando função para contar itens vencidos e prestes a vencer
+def N_vencidos(data_list,option):
+    
+    if option == 1:
+        
+        itens = []
+        for item in data_list:
+            if (mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= time():
+                itens.append(item)
+        return itens
+    
+    else:
+        
+        itens = []
+        for item in data_list:
+            if  (
+                ((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) >= time()) 
+                and ((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= (time() + (86400*15)))
+                ):
+                itens.append(item)
+        return itens
+    
+    
 
 #convertendo lista de tuplas para lista
 def tuple_to_list(tupla):
@@ -733,12 +763,14 @@ class App(ctk.CTk): # App = ctk.CTk
                                       segmented_button_unselected_color="#333")
         self.tabview.pack(pady = 0)
         self.tabview.add("Controle de Dados")
+        self.tabview.add("Listagem")
         self.tabview.add("Relatório")
         self.tabview.add("Etiquetas")
         self.tabview.add("Correções")
-        self.tabview.tab("Etiquetas").grid_columnconfigure(1, weight=1)
         self.tabview.tab("Controle de Dados").grid_columnconfigure(1, weight=1)
+        self.tabview.tab("Listagem").grid_columnconfigure(1, weight=1)
         self.tabview.tab("Relatório").grid_columnconfigure(1, weight=1)
+        self.tabview.tab("Etiquetas").grid_columnconfigure(1, weight=1)
         self.tabview.tab("Correções").grid_columnconfigure(1, weight=1)
         
         
@@ -776,7 +808,7 @@ class App(ctk.CTk): # App = ctk.CTk
                     pass
                 
             else:
-                messagebox.showerror(title='Erro de Seleção', message='Por favor, selecione\n   uma das opções' )
+                messagebox.showerror(title='Erro de Seleção', message='Por favor, selecione\numa das opções' )
             pass
         
         #criando botão para geração de PDF de etiquetas
@@ -823,27 +855,27 @@ class App(ctk.CTk): # App = ctk.CTk
         self.Label_Ident.place(x=18.5,y=50+40)
         # criando entry para Identificação
         self.Identficador_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['','EC','PT','MP','GR'] ,
-                                        width=120, height=35, font=('arial',14,'bold'),corner_radius=8)
+                                        width=105, height=35, font=('arial',14,'bold'),corner_radius=8)
         self.Identficador_entry.place(x=18.5,y=50+65)
         
         
         # criando Label da entry para IDs
         self.Label_ID_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='ID:', font=("arial",14,"bold"))
-        self.Label_ID_entry.place(x=18.5+135,y=50+40)
+        self.Label_ID_entry.place(x=18.5+115,y=50+40)
         # criando entry para IDs
         self.ID_entry = ctk.CTkEntry(self.tabview.tab("Controle de Dados"), 
-                                        width=118, height=35, font=('arial',14))
-        self.ID_entry.place(x=18+135,y=50+65)
+                                        width=100, height=35, font=('arial',14))
+        self.ID_entry.place(x=18+116,y=50+65)
         
         
         # criando Label da entry para Volume
         self.Label_Volume_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Volume:',font=("arial",14,"bold"))
-        self.Label_Volume_entry.place(x=18.5+135+115+17,y=50+40)
+        self.Label_Volume_entry.place(x=19+135+115+17-40,y=50+40)
         # criando entry para Volume
         self.Volume_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),
-                                        values=['','3,6 L','5 L','10 L','18 L','20 L','50 L','500 mL','250 mL', 'Caixa'],
-                                        width=118, height=35, font=('arial',14,'bold'),corner_radius=8 )
-        self.Volume_entry.place(x=18+135+115+17,y=50+65)
+                                        values=['','Balde 3,6 L','Balde 5 L','Balde 10 L','Bombona 18 L','Bombona 20 L','Bombona 50 L','Pote 500 mL','Frasco 250 mL', 'Caixa'],
+                                        width=158, height=35, font=('arial',14,'bold'),corner_radius=8 )
+        self.Volume_entry.place(x=17+135+115+17-40,y=50+65)
         
         
         #variável para inserir como lista de Responsáveeis  no combobox Responsável
@@ -909,10 +941,8 @@ class App(ctk.CTk): # App = ctk.CTk
             self.Responsavel_entry.set('')
             self.Volume_entry.set('')
             self.OBS_entry.delete(0,END)
-            if self.Filtro_entry.get() == 'Vencidos':
-                self.Filtro_entry.set('')
+            self.Filtro_entry.set('')
             self.Busca_entry.delete(0,END)
-            # add_to_TREEVIEW()
             self.TREEVIEW.selection_remove(self.TREEVIEW.focus())
             add_to_TREEVIEW()
         
@@ -1001,6 +1031,8 @@ class App(ctk.CTk): # App = ctk.CTk
         #criando função para inserção de itens
         def INSERIR():
             
+            Lista = ['EC','PT','MP','GR']
+            
             Identificador = self.Identficador_entry.get()
             ID = self.ID_entry.get().strip().replace(' ', '')
             Responsável = self.Responsavel_entry.get().title().strip()
@@ -1020,9 +1052,11 @@ class App(ctk.CTk): # App = ctk.CTk
                    (len(Validade.split('/')[2])!=4 or Validade.split('/')[2].isdigit == False) ):
                 messagebox.showerror('Erro ao inserir a Validade','Por favor, insira a data de validade \nno padrão dd/mm/AAAA')
             
-            elif (Identificador == '' and Identificador != 'EC' and Identificador != 'PT' and Identificador != 'MP' and Identificador != 'GR'
-                  or Responsável == '' or Código == '' or Volume == ''):
-                messagebox.showerror('Erro ao inserir dados', 'Por favor, preencha todos \nos campos pertinentes')
+            elif Identificador not in Lista:
+                messagebox.showerror('Erro ao inserir dados', 'Por favor, selecione um \nidentificador válido.')      
+            
+            elif Responsável == '' or Código == '' or Volume == '':
+                messagebox.showerror('Erro ao inserir dados', 'Por favor, preencha todos \nnos campos pertinentes')
                 
             else:
                 
@@ -1087,6 +1121,8 @@ class App(ctk.CTk): # App = ctk.CTk
         #criando função para atualização de dados
         def ATUALIZAR():
             
+            Lista = ['EC','PT','MP','GR']
+            
             Identificador = self.Identficador_entry.get()
             ID = self.ID_entry.get().strip().replace(' ', '')
             Responsável = self.Responsavel_entry.get().title().strip()
@@ -1106,8 +1142,10 @@ class App(ctk.CTk): # App = ctk.CTk
                    (len(Validade.split('/')[2])!=4 or Validade.split('/')[2].isdigit == False) ):
                 messagebox.showerror('Erro ao inserir a Validade','Por favor, insira a data de validade \nno padrão dd/mm/AAAA')
                 
-            elif (Identificador == '' and Identificador != 'EC' and Identificador != 'PT' and Identificador != 'MP' and Identificador != 'GR'
-                  or Responsável == '' or Código == '' or Volume == ''):
+            elif Identificador not in Lista:
+                messagebox.showerror('Erro ao inserir dados', 'Por favor, selecione um \nidentificador válido.')      
+            
+            elif Responsável == '' or Código == '' or Volume == '':
                 messagebox.showerror('Erro ao inserir dados', 'Por favor, preencha todos \nos campos pertinentes')
                 
             else:
@@ -1227,11 +1265,12 @@ class App(ctk.CTk): # App = ctk.CTk
         self.TREEVIEW_scrollbar = Scrollbar(self.TREEVIEW_Frame)
         self.TREEVIEW_scrollbar.pack(side=RIGHT,fill=Y )
         
-        #criando Treeview
-        self.TREEVIEW = Treeview(self.TREEVIEW_Frame,yscrollcommand=self.TREEVIEW_scrollbar.set ,height=7 )
+        # #criando Treeview
+        self.TREEVIEW = Treeview(self.TREEVIEW_Frame,height=7,yscrollcommand=self.TREEVIEW_scrollbar.set )
         self.TREEVIEW.pack()#place(x=18,y=285)
-        #ativando o click da scrollbar
-        self.TREEVIEW_scrollbar.config(command=self.TREEVIEW.yview)
+        # #ativando o click da scrollbar
+        self.TREEVIEW_scrollbar.configure(command=self.TREEVIEW.yview)
+        
         #criando colunas
         self.TREEVIEW['columns'] = ('Identif.','ID','Código','Validade','Responsável','Volume')
         self.TREEVIEW.column('#0', width=0, stretch=NO)
@@ -1258,15 +1297,16 @@ class App(ctk.CTk): # App = ctk.CTk
         ##### CRIANDO ABA DE "Correções" #################################################################
         
         #criando label de aviso
-        self.Aviso_Label = ctk.CTkLabel(self.tabview.tab("Correções"), text = """***Use apenas para corrigir códigos ou responsáveis com erros de digitação.\n***Não use para alterar itens com cadastro incorreto!""",
+        self.Aviso_Label = ctk.CTkLabel(self.tabview.tab("Correções"), text = """*Use apenas para corrigir códigos ou responsáveis com erros de digitação.\n*Não use para alterar itens com cadastro incorreto!""",
                                         font=("arial",13), justify = "center")
         self.Aviso_Label.pack(pady=5)
         
         #criando frame para aba alterações
         self.Alteração_Frame = ctk.CTkFrame(self.tabview.tab("Correções"),
                                             width=700*0.5, height=510*0.75, border_color='grey',
-                                            border_width = 2, fg_color='white')
+                                            border_width = 2, fg_color='#f2f2f2')
         self.Alteração_Frame.pack(pady=10)
+        
       
             
         #criando Label para correção de códigos velhos
@@ -1327,8 +1367,8 @@ class App(ctk.CTk): # App = ctk.CTk
             if Código_wrong == ''  and Código_right == '' and Resp_wrong == '' and Resp_right == '':
                 messagebox.showerror('Erro ao Corrigir','Por favor, selecione o parâmetro \nque deseja corrigir.')
                   
-            if Código_wrong != '' and Resp_wrong != '':
-                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas uma \ncategoria por vez.')
+            elif Código_wrong != '' and Resp_wrong != '':
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas\numa categoria por vez.')
                 
             #condição código correto
             elif Código_wrong != ''  and Código_right != '' and Resp_wrong == '' and Resp_right == '':
@@ -1411,7 +1451,7 @@ class App(ctk.CTk): # App = ctk.CTk
                 messagebox.showerror('Erro ao Corrigir','Por favor, selecione o parâmetro \nque deseja corrigir.')
     
             else:
-                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas uma\ncategoria por vez.')
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas\numa categoria por vez.')
                 
         
         #criando função para exclusão de dados da aba correção
@@ -1428,8 +1468,8 @@ class App(ctk.CTk): # App = ctk.CTk
             if Código_wrong == '' and Resp_wrong == '':
                 messagebox.showerror('Erro ao Corrigir','Por favor, selecione o parâmetro \nque deseja corrigir.')
                   
-            if Código_wrong != '' and Resp_wrong != '':
-                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas uma \ncategoria por vez.')
+            elif Código_wrong != '' and Resp_wrong != '':
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas\numa categoria por vez.')
                   
             #condição código correto
             elif Código_wrong != '':
@@ -1514,7 +1554,198 @@ class App(ctk.CTk): # App = ctk.CTk
                                 font=("arial",17), height=30, width=50,corner_radius=8, border_width=1.5 ,#border_color='',
                                 fg_color = '#e6a902', hover_color ='#b88702'  )#fg_color = 'silver', hover_color ='white')
         self.LIMPAR_Button_correções.place(x=130,y=330)   
-
+        
+        
+        ##### CRIANDO ABA DE "Relatório" #################################################################
+        
+        #Label aba relatório
+        self.Relat_Label = ctk.CTkLabel(self.tabview.tab('Relatório'), text='Relatório | Indicadores',
+                                        font=("arial",30))
+        self.Relat_Label.place(x=200,y=20)
+        
+        #criando frame para exibir relatório
+        self.Relat_frame = ctk.CTkScrollableFrame(self.tabview.tab('Relatório') , width=600, height=220,
+                                                  border_width=1.5, fg_color='#f2f2f2' )
+        self.Relat_frame.place(x=30,y=80)
+        
+        #função para mostrar painel de indicadores
+        def display_indicators():
+            
+            global dict_Var_Resp
+            
+            itens = tuple_to_list(fetch_itens(Table_Resp))
+            itens.pop(0)
+            
+            dict_Var_Resp = {}
+            
+            if (len(itens)%3)==0:
+                r = int(len(itens)/3)
+            else:
+                r = (len(itens)//3)+1
+            
+            count = 0
+            n = 0
+            valor = 3
+            for j in range(0,r):
+                count1 = 0
+                
+                if j == r-1 and len(itens)%3 !=0 :
+                    valor = len(itens)%3
+                for k in range(0,valor):
+                    
+                    data_list1 = busca_relatório(itens[n])
+                    vencidos = N_vencidos(data_list1, 1)
+                    vencidos15 = N_vencidos(data_list1, 0)
+                    
+                    if len(vencidos) != 0:
+                    
+                        self.Resp_Frame = ctk.CTkFrame(self.Relat_frame,width=185,height=110, border_width=1.5)#, fg_color='#ff0303' )
+                        self.Resp_Frame.grid(row=count,column=count1, padx = 8, pady = 8)
+                        
+                        self.Resp_Frame_name = ctk.CTkFrame(self.Resp_Frame,width=170,height=35.3,border_width=1.5, fg_color='#b50404' )
+                        self.Resp_Frame_name.place(x=7,y=5)
+                        
+                        self.check_var = ctk.BooleanVar(value=False)
+                        self.Resp_Frame_Check = ctk.CTkCheckBox(self.Resp_Frame_name , text=f' {itens[n]}',font=("arial",17,'bold'), bg_color='#b50404',
+                                                                border_color='white',corner_radius= 20, text_color='white',
+                                                                hover_color = 'grey',variable=self.check_var,onvalue=True,offvalue=False,
+                                                                checkbox_width=20,checkbox_height=20)
+                        self.Resp_Frame_Check.place(x=7,y=5)
+                        
+                        dict_Var_Resp[itens[n]] = (self.check_var,self.Resp_Frame_Check,'Vencidos')
+                        
+                        self.N_itens = ctk.CTkLabel(self.Resp_Frame , text=f'Nº de itens: {len(data_list1)}',font=("arial",12))
+                        self.N_itens.place(x=10,y=40)
+                        
+                        self.N_vencidos = ctk.CTkLabel(self.Resp_Frame , text=f'Vencidos: {len(vencidos)}',font=("arial",12,'bold'))
+                        self.N_vencidos.place(x=10,y=60)
+                        
+                        self.N_vencidos15 = ctk.CTkLabel(self.Resp_Frame , text=f'Vence em 15 dias: {len(vencidos15)}',font=("arial",12,'bold'))
+                        self.N_vencidos15.place(x=10,y=80)
+                        
+                    elif len(vencidos15) != 0:
+                        
+                        self.Resp_Frame = ctk.CTkFrame(self.Relat_frame,width=185,height=110, border_width=1.5)#, fg_color='#ff0303' )
+                        self.Resp_Frame.grid(row=count,column=count1, padx = 8, pady = 8)
+                        
+                        self.Resp_Frame_name = ctk.CTkFrame(self.Resp_Frame,width=170,height=35.3,border_width=1.5, fg_color='#c29502' )
+                        self.Resp_Frame_name.place(x=7,y=5)
+                        
+                        self.check_var = ctk.BooleanVar(value=False)
+                        self.Resp_Frame_Check = ctk.CTkCheckBox(self.Resp_Frame_name , text=f' {itens[n]}',font=("arial",17,'bold'), bg_color='#c29502',
+                                                                border_color='white',corner_radius= 20, text_color='white',
+                                                                hover_color = 'grey',variable=self.check_var,onvalue=True,offvalue=False,
+                                                                checkbox_width=20,checkbox_height=20)
+                        self.Resp_Frame_Check.place(x=7,y=5)
+                        
+                        dict_Var_Resp[itens[n]] = (self.check_var,self.Resp_Frame_Check,'Vence_em_15')
+                        
+                        self.N_itens = ctk.CTkLabel(self.Resp_Frame , text=f'Nº de itens: {len(data_list1)}',font=("arial",12))
+                        self.N_itens.place(x=10,y=40)
+                        
+                        self.N_vencidos = ctk.CTkLabel(self.Resp_Frame , text=f'Vencidos: {len(vencidos)}',font=("arial",12,'bold'))
+                        self.N_vencidos.place(x=10,y=60)
+                        
+                        self.N_vencidos15 = ctk.CTkLabel(self.Resp_Frame , text=f'Vence em 15 dias: {len(vencidos15)}',font=("arial",12,'bold'))
+                        self.N_vencidos15.place(x=10,y=80)
+                        
+                    else:
+                        
+                        self.Resp_Frame = ctk.CTkFrame(self.Relat_frame,width=185,height=110, border_width=1.5)#, fg_color='#ff0303' )
+                        self.Resp_Frame.grid(row=count,column=count1, padx = 8, pady = 8)
+                        
+                        self.Resp_Frame_name = ctk.CTkFrame(self.Resp_Frame,width=170,height=35.3,border_width=1.5, fg_color='#016634' )
+                        self.Resp_Frame_name.place(x=7,y=5)
+                        
+                        self.check_var = ctk.BooleanVar(value=False)
+                        self.Resp_Frame_Check = ctk.CTkCheckBox(self.Resp_Frame_name , text=f' {itens[n]}',font=("arial",17,'bold'), bg_color='#016634',
+                                                                border_color='white',corner_radius= 20, text_color='white',
+                                                                hover_color = 'grey',variable=self.check_var,onvalue=True,offvalue=False,
+                                                                checkbox_width=20,checkbox_height=20)
+                        self.Resp_Frame_Check.place(x=7,y=5)
+                        
+                        dict_Var_Resp[itens[n]] = (self.check_var,self.Resp_Frame_Check,'Ok')
+                        
+                        self.N_itens = ctk.CTkLabel(self.Resp_Frame , text=f'Nº de itens: {len(data_list1)}',font=("arial",12))
+                        self.N_itens.place(x=10,y=40)
+                        
+                        self.N_vencidos = ctk.CTkLabel(self.Resp_Frame , text=f'Vencidos: {len(vencidos)}',font=("arial",12,'bold'))
+                        self.N_vencidos.place(x=10,y=60)
+                        
+                        self.N_vencidos15 = ctk.CTkLabel(self.Resp_Frame , text=f'Vence em 15 dias: {len(vencidos15)}',font=("arial",12,'bold'))
+                        self.N_vencidos15.place(x=10,y=80)
+                        
+                    count1 += 1
+                    n += 1
+                count += 1
+            
+            
+        #Criando botão para refresh♻️↻🔄📦📥📬
+        self.refresh_button_1 = ctk.CTkButton(self.tabview.tab('Relatório'),text='',command = display_indicators() , 
+                                font=("helvitica",12,'bold'), height=25, width=30,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = 'grey', hover_color ='#a1a1a1')
+        self.refresh_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='Refresh',command = display_indicators , 
+                                font=("helvitica",12,'bold'), height=25, width=30,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = 'grey', hover_color ='#a1a1a1')
+        self.refresh_button.place(x=578,y=52)
+        
+        
+        #criando função para selecionar apenas itens vencidos
+        def select_vencidos():
+            
+            for value in dict_Var_Resp.values():
+                var,my_check,status = value
+                if status == 'Vencidos':
+                    my_check.toggle()
+        
+        #criando botão para selecionar itens vencidos ❕✅✔️
+        self.select_vencidos_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='❕ Vencidos',command = select_vencidos , 
+                                font=("helvitica",12,'bold'), height=25, width=80,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = '#b50404', hover_color ='#e30202')
+        self.select_vencidos_button.place(x=32,y=235+85)
+        
+        #criando função para selecionar apenas itens que vencem dentro de 15 dias
+        def select_vencidos15():
+            
+            for value in dict_Var_Resp.values():
+                var,my_check,status = value
+                if status == 'Vence_em_15':
+                    my_check.toggle()
+                    
+        #criando botão para selecionar itens que vencem dentro de 15 dias ❕✅✔️
+        self.select_vencidos_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='⚠ 15 dias',command = select_vencidos15 , 
+                                font=("helvitica",12,'bold'), height=25, width=80,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = '#ab8903', hover_color ='#e3b602')
+        self.select_vencidos_button.place(x=32+90,y=235+85)
+        
+        #criando função para selecionar apenas itens que vencem dentro de 15 dias
+        def select_Oks():
+            
+            for value in dict_Var_Resp.values():
+                var,my_check,status = value
+                if status == 'Ok':
+                    my_check.toggle()
+                    
+        #criando botão para selecionar itens Ok ✔️
+        self.select_vencidos_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='✔️ Ok  ',command = select_Oks , 
+                                font=("helvitica",12,'bold'), height=25, width=80,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = '#016634', hover_color ='#02993c')
+        self.select_vencidos_button.place(x=32+90+88,y=235+85)
+        
+        #criando função para limpar itens selecionados
+        def clear_checked_itens():
+            for value in dict_Var_Resp.values():
+                var,my_check,status = value
+                my_check.deselect()
+        
+        # criando botão para limpar itens do relatório selecionados
+        self.refresh_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='✨Limpar',command = clear_checked_itens , 
+                                font=("helvitica",12), height=25, width=30,corner_radius=8,border_width=1.5 ,text_color='black',
+                                fg_color = '#e6a902', hover_color ='#b88702')
+        self.refresh_button.place(x=35,y=52)
+        
+        
+        
 
 if __name__ == "__main__":
     aplicativo = App()
