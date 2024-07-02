@@ -328,7 +328,7 @@ def busca_relatório(Valor_Busca):
     
     connection = sql.connect(f"{DB_caminho}")
     blinker = connection.cursor()
-    blinker.execute(f"SELECT * FROM {Table_Stock} WHERE Responsável = '{Valor_Busca}'")
+    blinker.execute(f"SELECT Id,Validade FROM {Table_Stock} WHERE Responsável = '{Valor_Busca}'")
     itens = blinker.fetchall()
     connection.close()
     return itens
@@ -340,22 +340,43 @@ def N_vencidos(data_list,option):
         
         itens = []
         for item in data_list:
-            if (mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= time():
-                itens.append(item)
+            if (mktime(datetime.strptime(item[1], "%d/%m/%Y").timetuple())+86399) <= time():
+                itens.append(item[0])
+        return itens
+    
+    elif option == 0:
+        
+        itens = []
+        for item in data_list:
+            if  (
+                ((mktime(datetime.strptime(item[1], "%d/%m/%Y").timetuple())+86399) >= time()) 
+                and ((mktime(datetime.strptime(item[1], "%d/%m/%Y").timetuple())+86399) <= (time() + (86400*15)))
+                ):
+                itens.append(item[0])
         return itens
     
     else:
         
         itens = []
         for item in data_list:
-            if  (
-                ((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) >= time()) 
-                and ((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= (time() + (86400*15)))
-                ):
-                itens.append(item)
+            if ((mktime(datetime.strptime(item[1], "%d/%m/%Y").timetuple())+86399) > (time() + (86400*15))):
+                itens.append(item[0])
         return itens
     
+#criando função para analisar dados de responsáveis específicos
+def busca_relatório_pdf_gen(Lista_Busca):
     
+    Data = []
+    
+    for n in range(len(Lista_Busca)):
+        blinker.execute(f"""SELECT Identificador,Id,Código,Validade,Volume FROM {Table_Stock} WHERE Id = {Lista_Busca[n]}""")
+        itens = blinker.fetchone()
+        Data.append(itens)
+    connection.close()
+    
+    return Data
+
+
 
 #convertendo lista de tuplas para lista
 def tuple_to_list(tupla):
@@ -1572,11 +1593,13 @@ class App(ctk.CTk): # App = ctk.CTk
         def display_indicators():
             
             global dict_Var_Resp
+            global dict_Data_Resp
             
             itens = tuple_to_list(fetch_itens(Table_Resp))
             itens.pop(0)
             
             dict_Var_Resp = {}
+            dict_Data_Resp = {}
             
             if (len(itens)%3)==0:
                 r = int(len(itens)/3)
@@ -1596,6 +1619,10 @@ class App(ctk.CTk): # App = ctk.CTk
                     data_list1 = busca_relatório(itens[n])
                     vencidos = N_vencidos(data_list1, 1)
                     vencidos15 = N_vencidos(data_list1, 0)
+                    itens_Ok = N_vencidos(data_list1, 2)
+                    
+                    dict_Data_Resp[itens[n]] = [vencidos,vencidos15,itens_Ok]
+                    
                     
                     if len(vencidos) != 0:
                     
@@ -1713,10 +1740,10 @@ class App(ctk.CTk): # App = ctk.CTk
                     my_check.toggle()
                     
         #criando botão para selecionar itens que vencem dentro de 15 dias ❕✅✔️
-        self.select_vencidos_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='⚠ 15 dias',command = select_vencidos15 , 
+        self.select_vencidos15_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='⚠ 15 dias',command = select_vencidos15 , 
                                 font=("helvitica",12,'bold'), height=25, width=80,corner_radius=8,border_width=1.5 ,#border_color='',
                                 fg_color = '#ab8903', hover_color ='#e3b602')
-        self.select_vencidos_button.place(x=32+90,y=235+85)
+        self.select_vencidos15_button.place(x=32+90,y=235+85)
         
         #criando função para selecionar apenas itens que vencem dentro de 15 dias
         def select_Oks():
@@ -1727,22 +1754,85 @@ class App(ctk.CTk): # App = ctk.CTk
                     my_check.toggle()
                     
         #criando botão para selecionar itens Ok ✔️
-        self.select_vencidos_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='✔️ Ok  ',command = select_Oks , 
+        self.select_Ok_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='✔️ Ok  ',command = select_Oks , 
                                 font=("helvitica",12,'bold'), height=25, width=80,corner_radius=8,border_width=1.5 ,#border_color='',
                                 fg_color = '#016634', hover_color ='#02993c')
-        self.select_vencidos_button.place(x=32+90+88,y=235+85)
+        self.select_Ok_button.place(x=32+90+88,y=235+85)
         
         #criando função para limpar itens selecionados
         def clear_checked_itens():
+            
             for value in dict_Var_Resp.values():
                 var,my_check,status = value
                 my_check.deselect()
+                
+            self.trazer_todos_check.deselect()
+            self.trazer_vence15_check.deselect()
         
         # criando botão para limpar itens do relatório selecionados
-        self.refresh_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='✨Limpar',command = clear_checked_itens , 
+        self.limpar_frames_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='✨Limpar',command = clear_checked_itens , 
                                 font=("helvitica",12), height=25, width=30,corner_radius=8,border_width=1.5 ,text_color='black',
                                 fg_color = '#e6a902', hover_color ='#b88702')
-        self.refresh_button.place(x=35,y=52)
+        self.limpar_frames_button.place(x=35,y=52)
+        
+        #criando frame para checkbox trazer_vence15_check
+        self.trazer_vence15_Frame = ctk.CTkFrame(self.tabview.tab('Relatório'),width=350,height=29,border_width=1.5, fg_color='#f2f2f2' )
+        self.trazer_vence15_Frame.place(x=32+90+88+94,y=235+85)
+        
+        #criando checkbox para trazer da base de dados itens que vencem em 15 dias
+        self.check_var_vence15 = ctk.BooleanVar(value=False)
+        self.trazer_vence15_check = ctk.CTkCheckBox(self.trazer_vence15_Frame , text=' Trazer dados de itens que vecem em 15 dias',font=("Helvitica",14),
+                                                border_color='grey', text_color='black',corner_radius=1,border_width=1.5,
+                                                hover_color = 'grey',variable=self.check_var_vence15,onvalue=True,offvalue=False,
+                                                checkbox_width=16,checkbox_height=16)
+        self.trazer_vence15_check.place(x=8,y=2)
+        
+        #criando frame para checkbox trazer_todos 222
+        self.trazer_todos_Frame = ctk.CTkFrame(self.tabview.tab('Relatório'),width=350,height=29,border_width=1.5, fg_color='#f2f2f2' )
+        self.trazer_todos_Frame.place(x=32+90+88+94,y=235+85+32)
+        #place(x=32+90+88+220,y=235+85+32)
+        
+        #criando checkbox para trazer da base de todos os itens selecionados
+        self.check_var_trazer_todos = ctk.BooleanVar(value=False)
+        self.trazer_todos_check = ctk.CTkCheckBox(self.trazer_todos_Frame , text=' Trazer dados de todos os itens',font=("Helvitica",14),
+                                                border_color='grey', text_color='black',corner_radius=1,border_width=1.5,
+                                                hover_color = 'grey',variable=self.check_var_trazer_todos,onvalue=True,offvalue=False,
+                                                checkbox_width=16,checkbox_height=16)
+        self.trazer_todos_check.place(x=8,y=2)
+        
+        #criando botão para gerar relatório✔️
+        self.select_Ok_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='📋  Gerar Relatório  ',command = select_Oks , 
+                                font=("helvitica",20,'bold'), height=30, width=258,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = '#080278',hover_color = '#037')
+        self.select_Ok_button.place(x=32,y=235+85+28)
+        
+        #função para gerar dados para tabela de cada responsável do Relatório em pdf
+        def pdf_data_gen():
+            
+            #tratando dados
+            dict_result_Resp = {}
+            for key,value in dict_Var_Resp.items():
+                var,my_check,status = value
+                if var.get() == True:
+                    
+                    if status == 'Vencidos':
+                        
+                        dict_result_Resp[key] = [dict_Data_Resp[key][0], 'Vencido']
+                        
+                    elif status == 'Vence_em_15':
+                        
+                        dict_result_Resp[key] = [dict_Data_Resp[key][1],'V.em 15 dias']
+                        
+                    else:
+                        
+                        dict_result_Resp[key] = [dict_Data_Resp[key][1], 'Ok']
+            
+            
+            
+            
+            connection = sql.connect(f"{DB_caminho}")
+            blinker = connection.cursor()
+            
         
         
         
@@ -1750,3 +1840,11 @@ class App(ctk.CTk): # App = ctk.CTk
 if __name__ == "__main__":
     aplicativo = App()
     aplicativo.mainloop()
+
+# for n,i in dict_Data_Resp.items():
+    
+#     print(n,'\n',i,'\n')
+
+for key,value in dict_Var_Resp.items():
+    var,my_check,status = value
+    print(key,var.get(),status)
