@@ -894,7 +894,7 @@ class App(ctk.CTk): # App = ctk.CTk
         self.Label_Volume_entry.place(x=19+135+115+17-40,y=50+40)
         # criando entry para Volume
         self.Volume_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),
-                                        values=['','Balde 3,6 L','Balde 5 L','Balde 10 L','Bombona 18 L','Bombona 20 L','Bombona 50 L','Pote 500 mL','Frasco 250 mL', 'Caixa'],
+                                        values=['','Balde 3,6 L','Balde 5 L','Balde 10 L','Balde 18 L','Bombona 20 L','Bombona 50 L','Pote 500 mL','Frasco 250 mL', 'Caixa'],
                                         width=158, height=35, font=('arial',14,'bold'),corner_radius=8 )
         self.Volume_entry.place(x=17+135+115+17-40,y=50+65)
         
@@ -1800,42 +1800,114 @@ class App(ctk.CTk): # App = ctk.CTk
                                                 checkbox_width=16,checkbox_height=16)
         self.trazer_todos_check.place(x=8,y=2)
         
-        #criando botão para gerar relatório✔️
-        self.select_Ok_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='📋  Gerar Relatório  ',command = select_Oks , 
-                                font=("helvitica",20,'bold'), height=30, width=258,corner_radius=8,border_width=1.5 ,#border_color='',
-                                fg_color = '#080278',hover_color = '#037')
-        self.select_Ok_button.place(x=32,y=235+85+28)
-        
         #função para gerar dados para tabela de cada responsável do Relatório em pdf
         def pdf_data_gen():
             
             #tratando dados
+            global dict_result_Resp, dict_Data_Table
             dict_result_Resp = {}
-            for key,value in dict_Var_Resp.items():
-                var,my_check,status = value
-                if var.get() == True:
+            
+            if self.check_var_vence15.get() == False and self.check_var_trazer_todos.get() == False:
+                
+                for key,value in dict_Var_Resp.items():
                     
-                    if status == 'Vencidos':
+                    var,my_check,status = value
+                    
+                    if var.get() == True:
                         
-                        dict_result_Resp[key] = [dict_Data_Resp[key][0], 'Vencido']
+                        if status == 'Vencidos':
+                            
+                            dict_result_Resp[key] = [[dict_Data_Resp[key][0], 'Vencido']]
+                            
+                        elif status == 'Vence_em_15':
+                            
+                            dict_result_Resp[key] = [[dict_Data_Resp[key][1],'V.em 15 dias']]
+                            
+                        else:
+                            
+                            dict_result_Resp[key] = [[dict_Data_Resp[key][2], 'Ok']]
+                            
+                    
+            elif self.check_var_vence15.get() == True and self.check_var_trazer_todos.get() == False:
+                
+                for key,value in dict_Var_Resp.items():
+                    
+                    var,my_check,status = value
+                    
+                    if var.get() == True:
                         
-                    elif status == 'Vence_em_15':
-                        
-                        dict_result_Resp[key] = [dict_Data_Resp[key][1],'V.em 15 dias']
-                        
-                    else:
-                        
-                        dict_result_Resp[key] = [dict_Data_Resp[key][1], 'Ok']
+                        if status == 'Vencidos':
+                            
+                            dict_result_Resp[key] = [[dict_Data_Resp[key][0], 'Vencido'],
+                                                     [dict_Data_Resp[key][1],'V.em 15 dias']]
+                            
+                        elif status == 'Vence_em_15':
+                            
+                            dict_result_Resp[key] = [[dict_Data_Resp[key][1],'V.em 15 dias']]
+                            
+                        else:
+                            
+                            dict_result_Resp[key] = [[dict_Data_Resp[key][2], 'Ok']]
+                            
             
-            
-            
+            else:
+                
+                for key,value in dict_Var_Resp.items():
+                    
+                    var,my_check,status = value
+                    
+                    if var.get() == True:
+                        
+                        if status == 'Vencidos':
+                            
+                            dict_result_Resp[key] = [[dict_Data_Resp[key][0], 'Vencido'],
+                                                     [dict_Data_Resp[key][1],'V.em 15 dias'],
+                                                     [dict_Data_Resp[key][2], 'Ok']]
+                            
+                        elif status == 'Vence_em_15':
+                            
+                            dict_result_Resp[key] = [[dict_Data_Resp[key][1],'V.em 15 dias'],
+                                                     [dict_Data_Resp[key][2], 'Ok']] 
+                            
+                        else:
+                            
+                            dict_result_Resp[key] = [[dict_Data_Resp[key][2], 'Ok']]
+                            
+                    
             
             connection = sql.connect(f"{DB_caminho}")
             blinker = connection.cursor()
             
+            dict_Data_Table = {}
+            
+            for key in dict_result_Resp.keys():
+                
+                data_list = []
+            
+                for n in range(len(dict_result_Resp[key])):
+                    
+                    
+                    for i in range(len(dict_result_Resp[key][n][0])):
+                    
+                        blinker.execute(f"""SELECT Identificador,Id,Código,Validade,Volume FROM {Table_Stock} 
+                                        WHERE Id = {dict_result_Resp[key][n][0][i]}""")
+                        item = blinker.fetchone()
+                        row = [item[0],item[1],item[2],item[3],'',item[4],dict_result_Resp[key][n][1],'','']  
+                        data_list.append(row)
+                
+                
+                dict_Data_Table[key] = data_list        
+                        
+            connection.close()
+            
+            # return dict_result_Resp
         
         
-        
+        #criando botão para gerar relatório✔️
+        self.select_Ok_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='📋  Gerar Relatório  ',command = pdf_data_gen , 
+                                font=("helvitica",20,'bold'), height=30, width=258,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = '#080278',hover_color = '#037')
+        self.select_Ok_button.place(x=32,y=235+85+28)
 
 if __name__ == "__main__":
     aplicativo = App()
@@ -1845,101 +1917,13 @@ if __name__ == "__main__":
     
 #     print(n,'\n',i,'\n')
 
-for key,value in dict_Var_Resp.items():
-    var,my_check,status = value
-    print(key,var.get(),status)
+# for key,value in dict_Var_Resp.items():
+#     var,my_check,status = value
+#     print(key,var.get(),status)
 
-from reportlab.pdfgen import canvas
-# from reportlab.lib.pagesizes import letter, A4
-# from reportlab.platypus import Table
-# from reportlab.lib import colors
+# print(dict_result_Resp,'\n')   
+for k,v in dict_Data_Table.items():
+    print('\n',k)
+    for n in v:
+        print(n)
 
-# from os import getlogin
-# from datetime import datetime
-
-# f = 25.4/72
-
-# data = [["EC", 14817 ,"P687","22/06/2024","","Bombona 10 L","V.em 15 dias","",""],
-# ["MP", 2368918516 ,"KT-75-8895","04/06/2024","''","3,6 L","Vencido","",""],
-# ["MP", 20080 ,"KT-75-8895","05/06/2024","''","5 L","\U0001f603 15 dias","",""],
-# ["EC", 20612 ,"KT-75-8895","23/06/2024","''","500 mL","⚠ 15 dias","",""],
-# ["MP", 22141 ,"P6000CX","19/07/2024","''","10 L","⚠ 15 dias","",""],
-# ["GR", 22788 ,"PAINÉISNISSANN","22/06/2024","''","Caixa","⚠ 15 dias","",""],
-# ["PT", 23740 ,"CF700VNR","30/06/2024","''","20 L","⚠ 15 dias","",""],
-# ["EC", 38617 ,"E6430","22/06/2024","''","20 L","⚠ 15 dias","",""],
-# ["MP", 39023 ,"HW-89-7643","22/06/2025","''","10 L","⚠ 15 dias","",""],
-# ["EC", 42857 ,"EPIC300","24/06/2024","","18 L","⚠ 15 dias","",""],
-# ["PT", 42865 ,"VB700A","22/06/2025","","20 L","⚠ 15 dias","",""],
-# ["GR", 45061 ,"SKG-71","13/06/2025","","20 L","⚠ 15 dias","",""],
-# ["MP", 50142 ,"KT-49-4487","28/03/2024","''","5 L","⚠ 15 dias","",""],
-# ["PT", 55001 ,"VB700A","22/06/2025","''","20 L","⚠ 15 dias","",""],
-# ["EC", 58224 ,"E6430","23/06/2024","''","20 L","⚠ 15 dias","",""],
-# ["MP", 59775 ,"SZR-10","03/06/2026","''","50 L","⚠ 15 dias","",""],
-# ["PT", 60879 ,"ÓLEO","16/06/2028","''","20 L","⚠ 15 dias","",""],
-# ["EC", 62420 ,"KT-75-8895","28/06/2024","''","500 mL","⚠ 15 dias","",""],
-# ["EC", 62890 ,"E6431","20/06/2025","''","18 L","⚠ 15 dias","",""],
-# ["MP", 63937 ,"KT-75-8895","04/06/2024","''","3,6 L","⚠ 15 dias","",""],
-# ["PT", 70779 ,"VB700R","26/06/2025","''","500 mL","⚠ 15 dias","",""],
-# ["GR", 71031 ,"SKG-71","03/06/2024","''","20 L","⚠ 15 dias","",""],
-# ["MP", 71236 ,"HW-89-7643","22/06/2025","''","10 L","⚠ 15 dias","",""],
-# ["MP", 73955 ,"KA-44-6589","12/03/2024","''","3,6 L","⚠ 15 dias","",""],
-# ["MP", 77808 ,"WE-9733","22/06/2024","''","5 L","⚠ 15 dias","",""],
-# ["EC", 80311 ,"EPIC300","22/06/2025","''","18 L","⚠ 15 dias","",""],
-# ["EC", 85363 ,"P6000CX","02/07/2024","''","10 L","⚠ 15 dias","",""],
-# ["PT", 90432 ,"VB700A","22/06/2025","''","20 L","⚠ 15 dias","",""],
-# ["EC", 91319 ,"ED7500","22/06/2025","''","18 L","⚠ 15 dias","",""],
-# ["EC", 92046 ,"P687","20/05/2024","''","3,6 L","⚠ 15 dias","",""],
-# ["PT", 97301 ,"VB700A","04/06/2024","''","20 L","⚠ 15 dias","",""],
-# ["EC", 206123 ,"KT-75-8895","23/06/2024","''","500 mL","⚠ 15 dias","",""]]
-
-# #criando função para eração de tabelas
-# def Table_Gen(data):
-    
-#     cabeçalho = ['Idf.','ID','Código','Validade','Revalidação','Volume','Status','R','D']
-    
-#     data.insert(0,cabeçalho)
-    
-    
-#     list_height_row = [6/f]*(len(data)-1)
-#     list_height_row.insert(0, 9/f)
-    
-#     lenght = 182/f
-    
-#     head_color = colors.toColor('rgba(0, 115, 153, 0.9)')
-    
-#     width_list = [lenght*0.06,lenght*0.11,lenght*0.19,
-#                   lenght*0.13,lenght*0.16,lenght*0.16,
-#                   lenght*0.14,lenght*0.03,lenght*0.03,]
-    
-#     Tabela = Table(data = data,colWidths=width_list,rowHeights=list_height_row)
-    
-#     Tabela.setStyle([('GRID',(0,0),(-1,-1),0.5,'GREY'),
-#                      ('BACKGROUND',(0,0),(-1,0),head_color),
-#                      ('TEXTCOLOR',(0,0),(-1,0),'white'),
-#                       ('FONTSIZE',(0,0),(-1,0),12),
-#                       ('FONTNAME',(0,0),(-1,0),'Helvetica-Bold'),
-#                       ('ALIGN',(0,0),(-1,-1),'CENTER'),
-#                       ('VALIGN',(0,0),(-1,-1),'MIDDLE')
-#                      ])
-    
-#     return Tabela
-
-
-    
-    
-    
-    
-# pdf = canvas.Canvas(f'Relatório de Armazenamento - {str(datetime.today())[:11]} - {getlogin()}.pdf',pagesize = A4)
-
-# # for Resp in dict_Var
-
-# # pdf.setLineWidth(0.5)
-# # pdf.line(180,500+84,180+350,500+84)
-
-# table = Table_Gen(data)
-
-# table.wrapOn(pdf, 0, 0) 
-# table.drawOn(pdf, 14.5/f, 200)  
-
-# pdf.showPage()
-# pdf.save()
