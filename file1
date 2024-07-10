@@ -1,161 +1,3285 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Jun 30 17:50:30 2024
+import customtkinter as ctk
+from customtkinter import *
 
-@author: User
-"""
+from xlsxwriter import Workbook,worksheet
+
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import Table
 from reportlab.lib import colors
 
-from os import getlogin
+from reportlab.pdfbase import pdfmetrics 
+from reportlab.pdfbase.ttfonts import TTFont
+
+from csv import reader
+
+from os import listdir, remove, startfile, mkdir, getlogin, path
+
+from shutil import copy2
+
+from customtkinter import filedialog
+
+from tkinter import *
+from tkinter.ttk import *
+from tkinter import messagebox
+from tkcalendar import *
+
+from PIL import Image
+
+from random import shuffle
+
+import sqlite3 as sql
+
 from datetime import datetime
+from time import time, mktime
 
-f = 25.4/72
-
-data = [["EC", 14817 ,"P687","22/06/2024","","Bombona 10 L","V. em 15 dias","",""],
-["MP", 2368918516 ,"KT-75-8895","04/06/2024","''","3,6 L","Vencido","",""],
-["MP", 20080 ,"KT-75-8895","05/06/2024","''","5 L","\U0001f603 15 dias","",""],
-["EC", 20612 ,"KT-75-8895","23/06/2024","''","500 mL","⚠ 15 dias","",""],
-["MP", 22141 ,"P6000CX","19/07/2024","''","10 L","⚠ 15 dias","",""],
-["GR", 22788 ,"PAINÉISNISSANN","22/06/2024","''","Caixa","⚠ 15 dias","",""],
-["PT", 23740 ,"CF700VNR","30/06/2024","''","20 L","⚠ 15 dias","",""],
-["EC", 38617 ,"E6430","22/06/2024","''","20 L","⚠ 15 dias","",""],
-["MP", 39023 ,"HW-89-7643","22/06/2025","''","10 L","⚠ 15 dias","",""],
-["EC", 42857 ,"EPIC300","24/06/2024","","18 L","⚠ 15 dias","",""],
-["PT", 42865 ,"VB700A","22/06/2025","","20 L","⚠ 15 dias","",""],
-["GR", 45061 ,"SKG-71","13/06/2025","","20 L","⚠ 15 dias","",""],
-["MP", 50142 ,"KT-49-4487","28/03/2024","''","5 L","⚠ 15 dias","",""],
-["PT", 55001 ,"VB700A","22/06/2025","''","20 L","⚠ 15 dias","",""],
-["EC", 58224 ,"E6430","23/06/2024","''","20 L","⚠ 15 dias","",""],
-["MP", 59775 ,"SZR-10","03/06/2026","''","50 L","⚠ 15 dias","",""],
-["PT", 60879 ,"ÓLEO","16/06/2028","''","20 L","⚠ 15 dias","",""],
-["EC", 62420 ,"KT-75-8895","28/06/2024","''","500 mL","⚠ 15 dias","",""],
-["EC", 62890 ,"E6431","20/06/2025","''","18 L","⚠ 15 dias","",""],
-["MP", 63937 ,"KT-75-8895","04/06/2024","''","3,6 L","⚠ 15 dias","",""],
-["PT", 70779 ,"VB700R","26/06/2025","''","500 mL","⚠ 15 dias","",""],
-["GR", 71031 ,"SKG-71","03/06/2024","''","20 L","⚠ 15 dias","",""],
-["MP", 71236 ,"HW-89-7643","22/06/2025","''","10 L","⚠ 15 dias","",""],
-["MP", 73955 ,"KA-44-6589","12/03/2024","''","3,6 L","⚠ 15 dias","",""],
-["MP", 77808 ,"WE-9733","22/06/2024","''","5 L","⚠ 15 dias","",""],
-["EC", 80311 ,"EPIC300","22/06/2025","''","18 L","⚠ 15 dias","",""],
-["EC", 85363 ,"P6000CX","02/07/2024","''","10 L","⚠ 15 dias","",""],
-["PT", 90432 ,"VB700A","22/06/2025","''","20 L","⚠ 15 dias","",""],
-["EC", 91319 ,"ED7500","22/06/2025","''","18 L","⚠ 15 dias","",""],
-["EC", 92046 ,"P687","20/05/2024","''","3,6 L","⚠ 15 dias","",""],
-["PT", 97301 ,"VB700A","04/06/2024","''","20 L","⚠ 15 dias","",""],
-["EC", 206123 ,"KT-75-8895","23/06/2024","''","500 mL","⚠ 15 dias","",""],
-["EC", 14817 ,"P687","22/06/2024","","Bombona 10 L","V. em 15 dias","",""],
-["MP", 2368918516 ,"KT-75-8895","04/06/2024","''","3,6 L","Vencido","",""],
-["MP", 20080 ,"KT-75-8895","05/06/2024","''","5 L","\U0001f603 15 dias","",""],
-["EC", 20612 ,"KT-75-8895","23/06/2024","''","500 mL","⚠ 15 dias","",""],
-["MP", 22141 ,"P6000CX","19/07/2024","''","10 L","⚠ 15 dias","",""],
-["GR", 22788 ,"PAINÉISNISSANN","22/06/2024","''","Caixa","⚠ 15 dias","",""],
-["PT", 23740 ,"CF700VNR","30/06/2024","''","20 L","⚠ 15 dias","",""],
-["EC", 38617 ,"E6430","22/06/2024","''","20 L","⚠ 15 dias","",""],
-["MP", 39023 ,"HW-89-7643","22/06/2025","''","10 L","⚠ 15 dias","",""],
-["EC", 42857 ,"EPIC300","24/06/2024","","18 L","⚠ 15 dias","",""],
-["PT", 42865 ,"VB700A","22/06/2025","","20 L","⚠ 15 dias","",""],
-["GR", 45061 ,"SKG-71","13/06/2025","","20 L","⚠ 15 dias","",""],
-["MP", 50142 ,"KT-49-4487","28/03/2024","''","5 L","⚠ 15 dias","",""],
-["PT", 55001 ,"VB700A","22/06/2025","''","20 L","⚠ 15 dias","",""],
-["EC", 58224 ,"E6430","23/06/2024","''","20 L","⚠ 15 dias","",""],
-["MP", 59775 ,"SZR-10","03/06/2026","''","50 L","⚠ 15 dias","",""],
-["PT", 60879 ,"ÓLEO","16/06/2028","''","20 L","⚠ 15 dias","",""],
-["EC", 62420 ,"KT-75-8895","28/06/2024","''","500 mL","⚠ 15 dias","",""],
-["EC", 62890 ,"E6431","20/06/2025","''","18 L","⚠ 15 dias","",""],
-["MP", 63937 ,"KT-75-8895","04/06/2024","''","3,6 L","⚠ 15 dias","",""],
-["PT", 70779 ,"VB700R","26/06/2025","''","500 mL","⚠ 15 dias","",""],
-["GR", 71031 ,"SKG-71","03/06/2024","''","20 L","⚠ 15 dias","",""],
-["MP", 71236 ,"HW-89-7643","22/06/2025","''","10 L","⚠ 15 dias","",""],
-["MP", 73955 ,"KA-44-6589","12/03/2024","''","3,6 L","⚠ 15 dias","",""],
-["MP", 77808 ,"WE-9733","22/06/2024","''","5 L","⚠ 15 dias","",""],
-["EC", 80311 ,"EPIC300","22/06/2025","''","18 L","⚠ 15 dias","",""],
-["EC", 85363 ,"P6000CX","02/07/2024","''","10 L","⚠ 15 dias","",""],
-["PT", 90432 ,"VB700A","22/06/2025","''","20 L","⚠ 15 dias","",""],
-["EC", 91319 ,"ED7500","22/06/2025","''","18 L","⚠ 15 dias","",""],
-["EC", 92046 ,"P687","20/05/2024","''","3,6 L","⚠ 15 dias","",""],
-["PT", 97301 ,"VB700A","04/06/2024","''","20 L","⚠ 15 dias","",""],
-["EC", 206123 ,"KT-75-8895","23/06/2024","''","500 mL","⚠ 15 dias","",""]]
-
-#criando função para eração de tabelas
-def Table_Gen(data):
-    
-    
-    
-    cabeçalho = ['Idf.','ID','Código','Validade','Revalidação','Volume','Status','R','D']
-    
-    data.insert(0,cabeçalho)
-    
-    
-    list_height_row = [6/f]*(len(data)-1)
-    list_height_row.insert(0, 9/f)
-    
-    lenght = 182/f
-    
-    head_color = colors.toColor('rgba(0, 115, 153, 0.9)')
-    
-    width_list = [lenght*0.06,lenght*0.11,lenght*0.19,
-                  lenght*0.13,lenght*0.16,lenght*0.16,
-                  lenght*0.14,lenght*0.03,lenght*0.03,]
-    
-    Tabela = Table(data = data,colWidths=width_list,rowHeights=list_height_row)
-    
-    Tabela.setStyle([('GRID',(0,0),(-1,-1),0.5,'GREY'),
-                      ('BACKGROUND',(0,0),(-1,0),head_color),
-                      ('TEXTCOLOR',(0,0),(-1,0),'white'),
-                      ('FONTSIZE',(0,0),(-1,0),12),
-                      ('FONTNAME',(0,0),(-1,0),'Helvetica-Bold'),
-                      ('ALIGN',(0,0),(-1,-1),'CENTER'),
-                      ('VALIGN',(0,0),(-1,-1),'MIDDLE')
-                      ])
-    
-    return Tabela
+# date_epoch = mktime(datetime.strptime('23/06/2024', "%d/%m/%Y").timetuple())
+# print(date_epoch)
+# print(time())
 
 
-y_size_Resp = 18
-y_size_linha = 12
-   
-y_resp_var = 18
+#GERANDO BASE DE DADOS PARA ETIQUETAS
+def Data_Gen():
+    
+    listaN = list(range(10000,100000))
 
-var = 100
+    listaN1 = list(range(100000,1000000))
+
+    listaN2 = list(range(1000000,10000000))
+
+    shuffle(listaN)
+
+    shuffle(listaN1)
+
+    shuffle(listaN2)
+
+    Lista_Geral = listaN + listaN1 + listaN2 
     
     
-pdf = canvas.Canvas(f'Relatório de Armazenamento - {str(datetime.today())[:11]} - {getlogin()}.pdf',pagesize = A4)
+    diret = mkdir('main_files/Label Data-Frame')
 
-# for Resp in dict_Var
 
-pdf.setFont('Helvetica-Bold',23)
-pdf.drawString(14/f, 792-var,"João Ricardo")
-# pdf.setFont('Helvetica-Bold',20)
-pdf.setFillColorRGB(0.102, 0.506, 0.6392,0.97)
-pdf.drawString(14/f-0.30, 792+0.30-var,"João Ricardo")
-# pdf.drawString(14/f, 842,"Ana Cussolim")
+    count = 0
+    while count != 1000-1:
+        with open(f'main_files/Label Data-Frame/Label_Data-{count}.csv','w') as arq:
+            
+            # tempo_inicial = time()
+            
+            for n in range(0+(10000*count),10000+(10000*count)):
+                if n == 10000+(10000*count)-1:
+                    arq.write(f'{Lista_Geral[n]}')
+                    break
+                arq.write(f'{Lista_Geral[n]}\n')
+                # Lista_Geral.pop(0)
+                
+            # tempo_final = time() 
+            # print(f'{tempo_final - tempo_inicial:.1f} segundos')
+            print(f'Label_Data-{count} CRIADO\n')
+            
+            count += 1
+    
 
-# pdf.setLineWidth(1.5)
-# pdf.setStrokeColorRGB(0.525, 0.525, 0.525)
 
-pdf.line(13.5/f,842-((13.5+2)/f+12)-var,597-13.5/f,842-((13.5+2)/f+12)-var)
+#OBTENDO O CAMINHO PARA SALVAR PDF EM LOCAL DESEJADO
+def Getting_Path():
+    
+    caminho = filedialog.askdirectory(title = "Selecione sua pasta de destino")
+    
+    return caminho
+    
 
-pdf.setLineWidth(1.5)
-pdf.setStrokeColorRGB(0.102, 0.506, 0.6392,0.97)
-pdf.line(13.5/f-1,842-((13.5+2)/f+12)+0.5-var,597-13.5/f,842-((13.5+2)/f+12)+0.50-var)
 
-# pdf.setLineWidth(1.5)
-pdf.line(13.5/f,842-((14)/f+11)-var,13.5/f,842-((14)/f+11)-12-var)#842-((9.3)/f))
 
-table = Table_Gen(data)
+#LENDO O ARQUIVO, RETORNANDO LISTA E FAZENDO FOLLOW-UP
+def Reading_Data():
+    
+    lista_arq = listdir('main_files/Label Data-Frame')
+    
+    #CASO OS DADOS TENHAM SE ESGOSTADOS
+    if lista_arq == []:
+        listaNF = []
+        return listaNF
+    
+    #LENDO OS DADOS
+    with open(f'main_files/Label Data-Frame/{lista_arq[0]}','r') as arq:
+        csv_arq = list(reader(arq))
+        
+        #TRATANDO POSSÍVEIS ERROS DE ALTERAÇÃO DADOS
+        while len(csv_arq) < 80:
+            remove(f'main_files/Label Data-Frame/{lista_arq[0]}')
+            lista_arq = listdir('main_files/Label Data-Frame')
+            if lista_arq == []:
+                listaNF = []
+                return listaNF
+                break
+            with open(f'main_files/Label Data-Frame/{lista_arq[0]}','r') as arq:
+                csv_arq = list(reader(arq))
+        
+        listaWT = []
+        
+        for n in range(0,80):
+            listaWT.append(csv_arq[n][0])
+            # print(csv_arq[n][0])
+    
+    #ATUALIZANDO OS ARQUIVOS DE DADOS:
+    if len(csv_arq) > 80:
+        
+        with open(f'main_files/Label Data-Frame/{lista_arq[0]}','w') as arq:
+            
+            N = len(csv_arq[80:])
+            for n in range(0,N):
+                if n == N-1:
+                    arq.write(f'{csv_arq[80:][n][0]}')
+                    break
+                arq.write(f'{csv_arq[80:][n][0]}\n')
+        
+        
+    else:
+        remove(f'main_files/Label Data-Frame/{lista_arq[0]}')
+        
+    
+    return listaWT
 
-table_size = (6/f)*(len(data)-1)+9/f
 
-table.wrapOn(pdf, 0, 0) 
-table.drawOn(pdf, 13.5/f, (842-table_size)-((13.5+2)/f+19)-var)
 
-pdf.showPage()
-pdf.save()
+
+#GERANDO O ARQUIVO PDF DE ETIQUETAS COM IDs
+def Label_Model(listaWT,tipo,caminho):
+    
+    #PARÂMETROS DE ENTRADA
+    c = caminho
+    t = tipo #EC,PT,MP or GR
+    l = listaWT
+    
+    #CASO SE ESGOTE O BANCO DE DADOS
+    if l == [] :
+        
+        count = 0
+        lista_pg = []
+        for n in range(0,20):
+            lista_lnh = []
+            for i in range(0,4):
+                # print(count)
+                lista_lnh.append('NoDataFound')
+                count += 1
+                
+        
+            lista_pg.append(lista_lnh)
+    
+    #TRATANDO LISTA DE IDS
+    else:
+        count = 0
+        # lista = []
+        # for j in range(0,80):
+        lista_pg = []
+        for n in range(0,20):
+            lista_lnh = []
+            for i in range(0,4):
+                # print(count)
+                lista_lnh.append(f'{t} '+str(l[count])[0:2]+
+                                      ' '+str(l[count])[2:4]+
+                                      ' '+str(l[count])[4:])
+                count += 1
+                
+        
+            lista_pg.append(lista_lnh)
+        # lista.append(lista_pg)
+    
+    time_mark = str(datetime.now())[:-7].replace(':',';')
+    
+    file_name = f'Etiquetas {time_mark} {getlogin()}.pdf'
+    
+    f = 25.4/72
+    
+    #CRIANDO PDF DE ETIQUETAS COM REPORTLAB
+    pdf = canvas.Canvas(f'main_files/PDFs_done/{file_name}',pagesize = letter)
+    
+    font = 'arialbd.ttf'
+    pdfmetrics.registerFont(TTFont(font, 'main_files/'+font))
     
     
+    # count = 0
+    # for pg in lista:
+        
+    count1 = 0
+    for linha in lista_pg:
+        
+        count2 = 0 
+        for cell in linha:
+            pdf.drawBoundary(1, (14.3+0.85)/f+count2*(47.5/f),
+                              254/f-count1*(12.7/f), 44/f, 10.8/f)
+            pdf.setFont(font,18)
+            pdf.drawCentredString((13.2+0.3)/f+(47.5/(2*f))+count2*(47.5/f),
+                                  250.8/f+(12.7/(2*f))-count1*(12.7/f),
+                                  str(lista_pg[count1][count2]))
+            count2 += 1
+        
+        count1 += 1
+            
+        # count += 1
+        # pdf.showPage()
+        
+    pdf.save()
+    
+    #SALVANDO CÓPIA DO ARQUIVO
+    copy2(f'main_files/PDFs_done/{file_name}', c)
+    
+    #ABRINDO ARQUIVO
+    startfile(c+f'/{file_name}')
+
+# PEGANDO INFORMAÇÕES DA TELA
+root = Tk()
+ScreenX,ScreenY = root.winfo_screenwidth(),root.winfo_screenheight()
+root.destroy()
+# print(ScreenX,ScreenY)
+
+
+
+######## CRIANDO E MANIPULANDO BANCO DE DADOS EM SQL ########################################### 
+DB_Name = 'Stock Data'
+DB_caminho = f'main_files/Data Base/{DB_Name}.db'
+Table_Stock = 'Stock_Data'
+Table_Trace = 'Stock_Data_Trace'
+Table_Resp =  'Stock_Data_Resp'
+Table_Códigos = 'Stock_Data_Cod'
+Table_Correções = 'Stock_Data_Corrections'
+
+#Crinado tabela do banco de dados
+def create_db():
+    
+    if path.exists(DB_caminho) == False:
+        
+        if path.exists('main_files/Data Base') == False:
+            
+            mkdir('main_files/Data Base')
+        
+        connection = sql.connect(f'{DB_caminho}')
+        blinker = connection.cursor() #como se fosse o cursor do prompt do SQL
+        blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Stock}(   Identificador TEXT,
+                                                                        Id INTEGER PRIMARY KEY,
+                                                                        Código NUMERIC,
+                                                                        Validade NUMERIC,
+                                                                        Responsável TEXT,
+                                                                        Volume NUMERIC,
+                                                                        Obs TEXT,
+                                                                        Time_Stamps_Login NUMERIC
+                                                                        )""")
+        connection.commit()
+
+        blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Trace}(   Identificador TEXT,
+                                                                        Id INTEGER,
+                                                                        Código NUMERIC,
+                                                                        Validade NUMERIC,
+                                                                        Responsável TEXT,
+                                                                        Volume NUMERIC,
+                                                                        Obs TEXT,
+                                                                        Time_Stamps_Login NUMERIC,
+                                                                        Time_Stamps_Login_Trace NUMERIC,
+                                                                        Status TEXT
+                                                                        )""")
+        connection.commit()
+        
+        blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Resp}(Responsáveis TEXT)""")
+        connection.commit()
+        
+        blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Códigos}(Códigos NUMERIC)""")
+        connection.commit()
+        
+        blinker.execute(f"""INSERT INTO {Table_Códigos}(Códigos) VALUES ('')""")
+        connection.commit()
+        
+        blinker.execute(f"""INSERT INTO {Table_Resp}(Responsáveis) VALUES ('')""")
+        connection.commit()
+        
+        blinker.execute(f"""CREATE TABLE IF NOT EXISTS {Table_Correções}(old TEXT,
+                                                                         new TEXT,
+                                                                         Time_Stamps_Login NUMERIC)""")
+        connection.commit()
+        
+        
+        connection.close()
+    
+create_db()    
+
+#Buscando dados    
+def fetch_itens(tabela):
+    
+    connection = sql.connect(f"{DB_caminho}")
+    blinker = connection.cursor()
+    blinker.execute(f"SELECT * FROM {tabela}")
+    itens = blinker.fetchall() #me retorna uma lista de tuplas
+    connection.close()
+    
+    return itens
+
+
+#criando a função buscar para sistema de busca filtrado
+def buscar(Filtro,Valor_Busca):
+    
+    connection = sql.connect(f"{DB_caminho}")
+    blinker = connection.cursor()
+    if Filtro == 'Id':
+        blinker.execute(f"SELECT * FROM {Table_Stock} WHERE {Filtro} LIKE '{Valor_Busca}%'")
+        itens = blinker.fetchall() 
+    else:
+        blinker.execute(f"SELECT * FROM {Table_Stock} WHERE {Filtro} LIKE '{Valor_Busca}%'")
+        itens = blinker.fetchall()
+    connection.close()
+    
+    return itens
+
+
+#criando função para analisar dados de responsáveis específicos
+def busca_relatório(Valor_Busca):
+    
+    connection = sql.connect(f"{DB_caminho}")
+    blinker = connection.cursor()
+    blinker.execute(f"SELECT Id,Validade FROM {Table_Stock} WHERE Responsável = '{Valor_Busca}'")
+    itens = blinker.fetchall()
+    connection.close()
+    return itens
+
+#criando função para contar itens vencidos e prestes a vencer
+def N_vencidos(data_list,option):
+    
+    if option == 1:
+        
+        itens = []
+        for item in data_list:
+            if (mktime(datetime.strptime(item[1], "%d/%m/%Y").timetuple())+86399) <= time():
+                itens.append(item[0])
+        return itens
+    
+    elif option == 0:
+        
+        itens = []
+        for item in data_list:
+            if  (
+                ((mktime(datetime.strptime(item[1], "%d/%m/%Y").timetuple())+86399) >= time()) 
+                and ((mktime(datetime.strptime(item[1], "%d/%m/%Y").timetuple())+86399) <= (time() + (86400*15)))
+                ):
+                itens.append(item[0])
+        return itens
+    
+    else:
+        
+        itens = []
+        for item in data_list:
+            if ((mktime(datetime.strptime(item[1], "%d/%m/%Y").timetuple())+86399) > (time() + (86400*15))):
+                itens.append(item[0])
+        return itens
+    
+#criando função para analisar dados de responsáveis específicos
+def busca_relatório_pdf_gen(Lista_Busca):
+    
+    Data = []
+    
+    for n in range(len(Lista_Busca)):
+        blinker.execute(f"""SELECT Identificador,Id,Código,Validade,Volume FROM {Table_Stock} WHERE Id = {Lista_Busca[n]}""")
+        itens = blinker.fetchone()
+        Data.append(itens)
+    connection.close()
+    
+    return Data
+
+
+
+#convertendo lista de tuplas para lista
+def tuple_to_list(tupla):
+    lista = []
+    for linha in tupla:
+        lista.append(linha[0])
+    lista.sort()
+    return lista
+
+#convertendo lista de tuplas para lista de listas
+def tuple_to_list2(tupla):
+    lista = []
+    for linha in tupla:
+        l = []
+        for n in range(0,6):
+            l.append(linha[n])
+        lista.append(l)
+    return lista
+    
+
+#craindo função para identificar se um ID já foi cadastrado
+def id_exists(ID):
+    connection = sql.connect(f"{DB_caminho}")
+    blinker = connection.cursor()
+    blinker.execute(f"SELECT 1 FROM {Table_Stock} WHERE Id = {ID}") #SELECT COUNT(*) FROM {Table} WHERE Id = {ID}
+    result =  str(blinker.fetchone())[1] 
+    if result == '1':
+        return True
+    else:
+        return False                                                  #result = blinker.fetchone
+    
+#craindo função para identificar se um Código já foi cadastrado
+def codigo_exists(Código):
+    connection = sql.connect(f"{DB_caminho}")
+    blinker = connection.cursor()
+    blinker.execute(f"SELECT 1 FROM {Table_Códigos} WHERE Códigos = '{Código}'")
+    result =  str(blinker.fetchone())[1] 
+    if result == '1':
+        return True
+    else:
+        return False 
+
+#craindo função para identificar se uma pessoa já foi cadastrada
+def resp_exists(Responsável):
+    connection = sql.connect(f"{DB_caminho}")
+    blinker = connection.cursor()
+    blinker.execute(f"SELECT 1 FROM {Table_Resp} WHERE Responsáveis = '{Responsável}'")
+    result =  str(blinker.fetchone())[1] 
+    if result == '1':
+        return True
+    else:
+        return False 
+
+#buscando OBS para mostrar no campo de observações
+def fetch_OBS(ID):
+    connection = sql.connect(f"{DB_caminho}")
+    blinker = connection.cursor()
+    blinker.execute(f"SELECT Obs FROM {Table_Stock} WHERE id = {ID}")
+    itens = blinker.fetchall()[0] #me retorna uma lista de tuplas
+    connection.close()
+    
+    return itens
+
+#Inserindo dados do íten
+def insert_itens(Identificador, ID, Código, Validade, Responsável, Volume, OBS):
+    
+    connection = sql.connect(f"{DB_caminho}")
+    Time_Stamps_Login = str(datetime.now())+str(getlogin())
+    blinker = connection.cursor()
+    blinker.execute(f"""INSERT INTO {Table_Stock}(  Identificador,
+                                                    Id,
+                                                    Código,
+                                                    Validade,
+                                                    ResponsáveL,
+                                                    Volume,
+                                                    Obs,
+                                                    Time_Stamps_Login) VALUES
+                                                    ('{Identificador}',
+                                                     {ID},
+                                                    '{Código}',
+                                                    '{Validade}',
+                                                    '{Responsável}',
+                                                    '{Volume}',
+                                                    '{OBS}',
+                                                    '{str(datetime.now())[:19]+' '+str(getlogin())}')""")
+    connection.commit()
+    
+    if codigo_exists(Código) == False:
+        
+        blinker.execute(f"""INSERT INTO {Table_Códigos}(Códigos) VALUES ('{Código}')""")
+        connection.commit()
+    else:
+        pass
+    
+    if resp_exists(Responsável) == False:
+        
+        blinker.execute(f"""INSERT INTO {Table_Resp}(Responsáveis) VALUES ('{Responsável}')""")
+        connection.commit()
+    else:
+        pass
     
     
+    connection.close()
     
+#Atualizando itens
+def update_itens(Identificador, ID, Código, Validade, Responsável, Volume, OBS):
+    
+    connection = sql.connect(f"{DB_caminho}")
+    blinker = connection.cursor()
+    blinker.execute(f'SELECT * FROM {Table_Stock} WHERE Id = {ID}')
+    item = blinker.fetchall()
+    blinker.execute(f"""INSERT INTO {Table_Trace} ( Identificador,
+                                                    Id,
+                                                    Código,
+                                                    Validade,
+                                                    ResponsáveL,
+                                                    Volume,
+                                                    Obs,
+                                                    Time_Stamps_Login,
+                                                    Time_Stamps_Login_Trace,
+                                                    Status) VALUES
+                                                    ('{item[0][0]}',
+                                                     {item[0][1]},
+                                                    '{item[0][2]}',
+                                                    '{item[0][3]}',
+                                                    '{item[0][4]}',
+                                                    '{item[0][5]}',
+                                                    '{item[0][6]}',
+                                                    '{item[0][7]}',
+                                                    '{str(datetime.now())[:19]+' '+str(getlogin())}',
+                                                    'UPDATED')""")
+    connection.commit()
+
+    blinker.execute(f"""UPDATE {Table_Stock} SET    Identificador = '{Identificador}',
+                                                    Id = {ID},
+                                                    Código = '{Código}',
+                                                    Validade = '{Validade}',
+                                                    ResponsáveL = '{Responsável}',
+                                                    Volume = '{Volume}',
+                                                    Obs = '{OBS}',
+                                                    Time_Stamps_Login = '{str(datetime.now())[:19]+' '+str(getlogin())}'
+                                                    WHERE Id = {ID}""")
+                                                    
+    connection.commit()
+    
+    if codigo_exists(Código) == False:
+        
+        blinker.execute(f"""INSERT INTO {Table_Códigos}(Códigos) VALUES ('{Código}')""")
+        connection.commit()
+    else:
+        pass
+    
+    if resp_exists(Responsável) == False:
+        
+        blinker.execute(f"""INSERT INTO {Table_Resp}(Responsáveis) VALUES ('{Responsável}')""")
+        connection.commit()
+    else:
+        pass
+    
+    connection.close()
+
+#Deletando dados
+def delete_itens(ID):
+    
+    connection = sql.connect(f"{DB_caminho}")
+    blinker = connection.cursor()
+    blinker.execute(f'SELECT * FROM {Table_Stock} WHERE Id = {ID}')
+    item = blinker.fetchall()
+    blinker.execute(f"""INSERT INTO {Table_Trace} ( Identificador,
+                                                    Id,
+                                                    Código,
+                                                    Validade,
+                                                    ResponsáveL,
+                                                    Volume,
+                                                    Obs,
+                                                    Time_Stamps_Login,
+                                                    Time_Stamps_Login_Trace,
+                                                    Status) VALUES
+                                                    ('{item[0][0]}',
+                                                     {item[0][1]},
+                                                    '{item[0][2]}',
+                                                    '{item[0][3]}',
+                                                    '{item[0][4]}',
+                                                    '{item[0][5]}',
+                                                    '{item[0][6]}',
+                                                    '{item[0][7]}',
+                                                    '{str(datetime.now())[:19]+' '+str(getlogin())}',
+                                                    'DELETED')""")
+    connection.commit()
+
+    blinker.execute(f'DELETE FROM {Table_Stock} WHERE Id = {ID}')
+    connection.commit()
+    connection.close()
+    
+#lista de itens vencidos
+def lista_vencidos():
+    
+    Base_total = fetch_itens(Table_Stock)
+    itens_vencidos = []
+    for item in Base_total:
+        if (mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= time():
+            itens_vencidos.append(item)
+    return itens_vencidos
+
+#função para retornar uma lista de itens vencidos em um determinado periodo de tempo futuro
+def lista_vencidos_em(dias):
+    Base_total = fetch_itens(Table_Stock)
+    itens_vencidos = []
+    for item in Base_total:
+        if  (
+            ((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) >= time()) 
+            and ((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= (time() + (86400*dias)))
+            ):
+            itens_vencidos.append(item)
+    return itens_vencidos
+
+#função para retornar uma lista de itens vencidos em um determinado periodo de tempo futuro
+def lista_vencidos_daqui(dias):
+    Base_total = fetch_itens(Table_Stock)
+    itens_vencidos = []
+    for item in Base_total:
+        if (mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) >= (time() + (86400*(dias-1))+86399):
+            itens_vencidos.append(item)
+    return itens_vencidos
+
+#criando função para correção dos dados de responsáveis e códigos
+def data_correction(data_wrong,data_right,campo,correction_type):
+    
+    connection = sql.connect(f"{DB_caminho}")
+    blinker = connection.cursor()
+    
+    if campo == 'Responsáveis':
+        
+        if correction_type == 'Atualizar':
+            
+            if resp_exists(data_right) == False:
+                blinker.execute(f"""UPDATE {Table_Resp} SET Responsáveis = '{data_right}' 
+                                WHERE Responsáveis = '{data_wrong}'""")
+                connection.commit()
+            else:
+                blinker.execute(f"DELETE FROM {Table_Resp} WHERE Responsáveis = '{data_wrong}'")
+                connection.commit()
+            
+            blinker.execute(f"""INSERT INTO {Table_Correções} (old,new,Time_Stamps_Login)
+                                VALUES ('{data_wrong}','{data_right}',
+                                        '{str(datetime.now())[:19]+' '+str(getlogin())+' Responsável'}')""")
+            connection.commit()
+            
+            blinker.execute(f"""SELECT * FROM {Table_Stock} WHERE Responsável = '{data_wrong}'""")
+            itens = blinker.fetchall()
+            
+            for item in itens:
+                blinker.execute(f"""INSERT INTO {Table_Trace} ( Identificador,
+                                                                Id,
+                                                                Código,
+                                                                Validade,
+                                                                ResponsáveL,
+                                                                Volume,
+                                                                Obs,
+                                                                Time_Stamps_Login,
+                                                                Time_Stamps_Login_Trace,
+                                                                Status) VALUES
+                                                                ('{item[0]}',
+                                                                 {item[1]},
+                                                                '{item[2]}',
+                                                                '{item[3]}',
+                                                                '{item[4]}',
+                                                                '{item[5]}',
+                                                                '{item[6]}',
+                                                                '{item[7]}',
+                                                                '{str(datetime.now())[:19]+' '+str(getlogin())}',
+                                                                'Correção-Código')""")
+            connection.commit()
+            
+            for item in itens:
+                blinker.execute(f"""UPDATE {Table_Stock} SET Responsável = '{data_right}' 
+                                WHERE Id = {item[1]}""")
+            connection.commit()
+            connection.close()
+        
+        else:
+            
+            blinker.execute(f"DELETE FROM {Table_Resp} WHERE Responsáveis = '{data_wrong}'")
+            connection.commit()
+            connection.close()
+    
+    else:
+        
+        if correction_type == 'Atualizar':
+            
+            if codigo_exists(data_right) == False:
+                blinker.execute(f"""UPDATE {Table_Códigos} SET Códigos = '{data_right}' 
+                                WHERE Códigos = '{data_wrong}'""")
+                connection.commit()
+            else:
+                blinker.execute(f"DELETE FROM {Table_Códigos} WHERE Códigos = '{data_wrong}'")
+                connection.commit()
+            
+            blinker.execute(f"""INSERT INTO {Table_Correções} (old,new,Time_Stamps_Login)
+                                VALUES ('{data_wrong}','{data_right}',
+                                        '{str(datetime.now())[:19]+' '+str(getlogin())+' Código'}')""")
+            connection.commit()
+            
+            blinker.execute(f"""SELECT * FROM {Table_Stock} WHERE Código = '{data_wrong}'""")
+            itens = blinker.fetchall()
+            
+            for item in itens:
+                blinker.execute(f"""INSERT INTO {Table_Trace} ( Identificador,
+                                                                Id,
+                                                                Código,
+                                                                Validade,
+                                                                ResponsáveL,
+                                                                Volume,
+                                                                Obs,
+                                                                Time_Stamps_Login,
+                                                                Time_Stamps_Login_Trace,
+                                                                Status) VALUES
+                                                                ('{item[0]}',
+                                                                 {item[1]},
+                                                                '{item[2]}',
+                                                                '{item[3]}',
+                                                                '{item[4]}',
+                                                                '{item[5]}',
+                                                                '{item[6]}',
+                                                                '{item[7]}',
+                                                                '{str(datetime.now())[:19]+' '+str(getlogin())}',
+                                                                'Correção-Responsável')""")
+            connection.commit()
+            
+            for item in itens:
+                blinker.execute(f"""UPDATE {Table_Stock} SET Código = '{data_right}' 
+                                WHERE Id = {item[1]}""")
+            connection.commit()
+            connection.close()
+        
+        else:
+            
+            blinker.execute(f"DELETE FROM {Table_Códigos} WHERE Códigos = '{data_wrong}'")
+            connection.commit()
+            connection.close()
+                
+                            
+#variáveis para aba listagem
+  
+listagem = []
+listagem_ID = []    
+    
+
+
+
+######## CRIANDO INTERFACE GRÁFICA ################################################################
+class App(ctk.CTk): # App = ctk.CTk
+    
+    def __init__(self):
+        super().__init__()
+        self.window_config()
+        self.tema_config()
+        self.frontend()
+        
+        
+        
+    def window_config(self):
+        self.title("SPSLab - Controle de Armazenamento")
+        x1,y1 = 1000,650
+        self.iconbitmap("PPG ICON.ico")
+        self.geometry(f"{x1}x{y1}+{(ScreenX-x1)//2}+{(ScreenY-y1)//4}")
+        self._set_appearance_mode("system")
+        # self.resizable(width=False, height=False)
+        self.minsize(width=x1,height=y1)
+        
+    
+    def tema_config(self):
+        
+        self.switch_var = ctk.StringVar(value="system")
+        
+        def set_tema():
+            
+            if self.switch_var.get() =="light":
+                ctk.set_appearance_mode("light")
+                
+            else:
+                ctk.set_appearance_mode("dark")
+                
+                
+        
+        self.switch = ctk.CTkSwitch(self, text = None, variable=self.switch_var, 
+                                    onvalue= "dark", offvalue="light", command=set_tema)
+        self.switch.place(x=25,y=20)
+        
+    
+    def frontend(self):
+        
+        self.Label_logo = ctk.CTkLabel(self, text="                      We protect and\n                      beautify the world™", 
+                                       font=("helvitica",12), justify = "left" )
+        self.Label_logo.place(relx=0.02,rely=0.927)#relx=0.09,rely=0.93)
+        
+        #Logo
+        if self.switch_var.get() =="light":
+            logo = ctk.CTkImage(light_image=Image.open("PPG LOGO2.png"), size=(250*0.25,90*0.25))
+        else:
+            logo = ctk.CTkImage(dark_image=Image.open("PPG LOGO2.png"), size=(153*0.40,120*0.40))
+            
+        self.logo_Label = ctk.CTkLabel(self, text=None,image=logo)
+        self.logo_Label.place(relx=0.02,rely=0.91)
+        
+        
+        self.Label = ctk.CTkLabel(self, text="Sistema de Controle de Armazenamento", font=("arial bold",30))
+        self.Label.pack(pady = 20)
+        
+        self.tabview = ctk.CTkTabview(self,
+                                      width = 700,
+                                      height = 510,
+                                      corner_radius = 8,
+                                      border_width = 2,
+                                      segmented_button_fg_color="grey",
+                                      segmented_button_selected_color="#037",
+                                      segmented_button_unselected_hover_color="#111",
+                                      segmented_button_unselected_color="#333")
+        self.tabview.pack(pady = 0)
+        self.tabview.add("Controle de Dados")
+        self.tabview.add("Listagem")
+        self.tabview.add("Relatório")
+        self.tabview.add("Etiquetas")
+        self.tabview.add("Correções")
+        self.tabview.tab("Controle de Dados").grid_columnconfigure(1, weight=1)
+        self.tabview.tab("Listagem").grid_columnconfigure(1, weight=1)
+        self.tabview.tab("Relatório").grid_columnconfigure(1, weight=1)
+        self.tabview.tab("Etiquetas").grid_columnconfigure(1, weight=1)
+        self.tabview.tab("Correções").grid_columnconfigure(1, weight=1)
+        
+        
+        ##### CRINADO ABA DE "Etiquetas" #################################################################
+        
+        self.Hang_Tags_Label = ctk.CTkLabel(self.tabview.tab("Etiquetas"), text="Escolha um Identificador",
+                                            font=("arial bold",30))
+        self.Hang_Tags_Label.pack(pady=20)
+        
+        #criando variável para radiobuttons
+        self.Tag_type = ctk.IntVar(value=0)
+        
+        #criando função para pegar valores de cada etiqueta
+        def tipo():
+            dictionary = {1:'EC',2:'PT',3:'MP',4:'GR'}
+            return dictionary[self.Tag_type.get()]
+        
+        #criando RadioButtons
+        dtry = {1:' EC',2:' PT',3:' MP',4:' GR'}
+        for n in range(1,5):
+            self.RBt = CTkRadioButton(self.tabview.tab("Etiquetas"), text = dtry[n], command = tipo , 
+                                      variable = self.Tag_type , value = n, font=("arial bold",40))
+            self.RBt.pack(pady=12)
+        
+        #definindo função para geração de PDF de etiquetas
+        def Gerar_PDF():
+            
+            if self.Tag_type.get() != 0:
+                
+                try:
+                    caminho = Getting_Path()
+                    
+                    Label_Model(Reading_Data(), tipo(), caminho)
+                except:
+                    pass
+                
+            else:
+                messagebox.showerror(title='Erro de Seleção', message='Por favor, selecione\numa das opções' )
+            pass
+        
+        #criando botão para geração de PDF de etiquetas
+        self.B1 = CTkButton(self.tabview.tab("Etiquetas"), text = "Gerar Etiquetas",command = Gerar_PDF, 
+                                font=("arial bold",18),fg_color="#ba0606")
+        self.B1.pack(pady = 25)
+        
+        #criando Label de Aviso
+        self.Label_aviso = ctk.CTkLabel(self.tabview.tab("Etiquetas"), text="* No momento da impressão selecione o tamanho Carta",
+                                            font=("arial",12))
+        self.Label_aviso.pack()
+        
+        
+        ##### CRIANDO ABA DE "Controle de Dados" #################################################################
+        
+        c = 2
+        # criando calendário para seleção de validade
+        self.Calen_Validade = Calendar(self.tabview.tab("Controle de Dados"),selectmode = 'day', 
+                                       date_pattern = 'dd/mm/y',locale="pt_BR" )
+        self.Calen_Validade.place(x=415,y=25)
+        
+        # criando barra de buscar de itens
+        self.Label_Busca_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Busca:', 
+                                              font=("arial",16,"bold"))
+        self.Label_Busca_entry.place(x=18.5+c,y=0)
+        self.Busca_entry = ctk.CTkEntry(self.tabview.tab("Controle de Dados"), 
+                                        width=200, height=35, font=('arial',14))
+        self.Busca_entry.place(x=18+c,y=25)
+        
+        
+        
+        # criando Label para ComboBox de filtro
+        self.Label_Filtro = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Filtro:', 
+                                         font=("arial",14,"bold"))
+        self.Label_Filtro.place(x=18.5+210+45+c,y=0)
+        # criando ComboBox de filtro para busca de itens
+        self.Filtro_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['ID','Vencidos','Vence em X dias','Vence depois de X dias','Identif.','Código','Resp.','Validade','Volume'] ,
+                                        width=130, height=35, font=('arial',14,'bold'),corner_radius=8)
+        self.Filtro_entry.place(x=18+210+45+c,y=25)
+        
+        
+        # criando Label para entry Identificação
+        self.Label_Ident = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Identificador:',
+                                        font=("arial",14,"bold"))
+        self.Label_Ident.place(x=18.5+c,y=50+40)
+        # criando entry para Identificação
+        self.Identficador_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values=['','EC','PT','MP','GR'] ,
+                                        width=105, height=35, font=('arial',14,'bold'),corner_radius=8)
+        self.Identficador_entry.place(x=18.5+c,y=50+65)
+        
+        
+        # criando Label da entry para IDs
+        self.Label_ID_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='ID:', font=("arial",14,"bold"))
+        self.Label_ID_entry.place(x=18.5+115+c,y=50+40)
+        # criando entry para IDs
+        self.ID_entry = ctk.CTkEntry(self.tabview.tab("Controle de Dados"), 
+                                        width=100, height=35, font=('arial',14))
+        self.ID_entry.place(x=18+116+c,y=50+65)
+        
+        
+        # criando Label da entry para Volume
+        self.Label_Volume_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Volume:',font=("arial",14,"bold"))
+        self.Label_Volume_entry.place(x=19+135+115+17-40+c,y=50+40)
+        # criando entry para Volume
+        self.Volume_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),
+                                        values=['','Balde 3,6 L','Balde 5 L','Balde 10 L','Balde 18 L','Bombona 20 L','Bombona 50 L','Pote 500 mL','Frasco 250 mL', 'Caixa'],
+                                        width=158, height=35, font=('arial',14,'bold'),corner_radius=8 )
+        self.Volume_entry.place(x=17+135+115+17-40+c,y=50+65)
+        
+        
+        #variável para inserir como lista de Responsáveeis  no combobox Responsável
+        self.Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
+        # criando Label da entry para Responsáveis
+        self.Label_Responsavel_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Responsável:',
+                                                    font=("arial",14,"bold"))
+        self.Label_Responsavel_entry.place(x=18.5+c,y=50+40+63)
+        # criando entry para Responsáveis
+        self.Responsavel_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),
+                                        values = self.Responsáveis,
+                                        width=235, height=35, font=('arial',14),corner_radius=8 )
+        self.Responsavel_entry.place(x=18+c,y=50+65+63)
+        
+        #variável para inserir códigos com lista no combobox códigos
+        self.códigos = tuple_to_list(fetch_itens(Table_Códigos))
+        # criando Label da entry para Códigos
+        self.Label_Codigo_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Código:', 
+                                               font=("arial",14,"bold"))
+        self.Label_Codigo_entry.place(x=18.5+265-15+c,y=50+40+63)
+        # criando Label da entry para Códigos
+        self.Codigo_entry = ctk.CTkComboBox(self.tabview.tab("Controle de Dados"),values = self.códigos , 
+                                        width=136, height=35, font=('arial',14))
+        self.Codigo_entry.place(x=18+265-17+c,y=50+65+63)
+        
+        
+        # criando Label da entry para Observações
+        self.Label_OBS_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='OBS:', font=("arial",14,"bold"))
+        self.Label_OBS_entry.place(x=18.5+c,y=50+40+63+63)
+        # criando entry para Observações
+        self.OBS_entry = ctk.CTkEntry(self.tabview.tab("Controle de Dados"), 
+                                      width=217.5, height=35, font=('arial',14))
+        self.OBS_entry.place(x=18+c,y=50+65+63+60)
+        
+        
+        # criando Label da entry para Validade
+        self.Label_Validade_entry = ctk.CTkLabel(self.tabview.tab("Controle de Dados"), text='Validade:', font=("arial",15,"bold"))
+        self.Label_Validade_entry.place(x=18.5+215+67-55,y=50+40+63+63)
+        # criando entry para Validade
+        self.Validade_entry = ctk.CTkEntry(self.tabview.tab("Controle de Dados"), placeholder_text= 'dd/mm/AAAA',
+                                        placeholder_text_color='#333', width=115, height=35, font=('arial',14))
+        self.Validade_entry.place(x=18+215+67-51.5+c,y=50+65+63+60)
+        
+        
+        #criando função para pegar data do calendário
+        def take_date():
+            self.Validade_entry.delete(0,END)
+            self.Validade_entry.insert(0, f'{self.Calen_Validade.get_date()}')
+            
+        #criando botão para pegar data do calendário
+        self.Validade_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='🗓',command = take_date,text_color = 'black',#command =, 
+                                font=("arial",18), height=35, width=35,corner_radius=8, #border_color='silver',
+                                border_width=1.5, fg_color = 'silver', hover_color ='white'  ) 
+                               #, border_color='silver')
+        self.Validade_Button.place(x=18+215+12+120.5+c,y=50+65+63+60)
+        
+        #criando função para limpar tudo
+        def clear_all():
+            self.Identficador_entry.set('')
+            self.ID_entry.delete(0,END)
+            self.Codigo_entry.set('')
+            self.Validade_entry.delete(0,END)
+            self.Responsavel_entry.set('')
+            self.Volume_entry.set('')
+            self.OBS_entry.delete(0,END)
+            self.Filtro_entry.set('')
+            self.Busca_entry.delete(0,END)
+            self.TREEVIEW.selection_remove(self.TREEVIEW.focus())
+            add_to_TREEVIEW()
+        
+        #criando função limpar dados da TREEVIEW
+        def clear(*clicked):
+            
+            if clicked:
+                self.TREEVIEW.selection_remove(self.TREEVIEW.focus())
+            self.Identficador_entry.set('')
+            self.ID_entry.delete(0,END)
+            self.Codigo_entry.set('')
+            self.Validade_entry.delete(0,END)
+            self.Responsavel_entry.set('')
+            self.Volume_entry.set('')
+            self.OBS_entry.delete(0,END)
+            
+
+        #criando função para mostrar dados selecionados
+        def display_data(event):
+            
+            selected_item = self.TREEVIEW.focus()
+            
+            if selected_item:
+                row = self.TREEVIEW.item(selected_item)['values']
+                clear()
+                self.Identficador_entry.set(row[0])
+                self.ID_entry.insert(0,row[1])
+                self.Codigo_entry.set(row[2])
+                self.Validade_entry.insert(0,row[3])
+                self.Responsavel_entry.set(row[4])
+                self.Volume_entry.set(row[5])
+                self.OBS_entry.insert(0, fetch_OBS(row[1])[0])
+            else:
+                pass
+        
+        #criando função para adicionar a TREEVIEW
+        def add_to_TREEVIEW():
+            dict_Filtro = {'ID':'Id',
+                           'Identif.':'Identificador',
+                           'Código':'Código',
+                           'Resp.':'Responsável',
+                           'Validade':'Validade',
+                           'Volume':'Volume'}
+            
+            if self.Busca_entry.get().upper() == 'VENCIDOS' or self.Filtro_entry.get() == 'Vencidos':
+                itens = lista_vencidos()
+                self.TREEVIEW.delete(*self.TREEVIEW.get_children())
+                for item in itens:
+                    self.TREEVIEW.insert('', END, values=item)
+                return len(itens)
+            
+            elif self.Filtro_entry.get() == 'Vence em X dias':
+                itens = lista_vencidos_em(int(self.Busca_entry.get().replace('dias','').strip()))
+                self.TREEVIEW.delete(*self.TREEVIEW.get_children())
+                for item in itens:
+                    self.TREEVIEW.insert('', END, values=item)
+                return len(itens)
+            
+            elif self.Filtro_entry.get() == 'Vence depois de X dias':
+                itens = lista_vencidos_daqui(int(self.Busca_entry.get().replace('dias','').strip()))
+                self.TREEVIEW.delete(*self.TREEVIEW.get_children())
+                for item in itens:
+                    self.TREEVIEW.insert('', END, values=item)
+                return len(itens)
+            
+            elif self.Filtro_entry.get() == '' or self.Busca_entry.get() == '':
+                itens = fetch_itens(Table_Stock)
+                self.TREEVIEW.delete(*self.TREEVIEW.get_children())
+                for item in itens:
+                    self.TREEVIEW.insert('', END, values=item)
+                
+            
+            elif self.Filtro_entry.get() == 'Resp.':
+                itens = buscar(dict_Filtro[self.Filtro_entry.get()], self.Busca_entry.get().strip().title())
+                self.TREEVIEW.delete(*self.TREEVIEW.get_children())
+                for item in itens:
+                    self.TREEVIEW.insert('', END, values=item)
+                return len(itens)
+            
+            elif self.Filtro_entry.get() == 'Volume':     
+                itens = buscar(dict_Filtro[self.Filtro_entry.get()], self.Busca_entry.get().strip())
+                self.TREEVIEW.delete(*self.TREEVIEW.get_children())
+                for item in itens:
+                    self.TREEVIEW.insert('', END, values=item)
+                return len(itens)
+            
+            else:     
+                itens = buscar(dict_Filtro[self.Filtro_entry.get()], self.Busca_entry.get().strip().upper())
+                self.TREEVIEW.delete(*self.TREEVIEW.get_children())
+                for item in itens:
+                    self.TREEVIEW.insert('', END, values=item)
+                return len(itens)
+
+        #criando função para inserção de itens
+        def INSERIR():
+            
+            Lista = ['EC','PT','MP','GR']
+            
+            Identificador = self.Identficador_entry.get()
+            ID = self.ID_entry.get().strip().replace(' ', '')
+            Responsável = self.Responsavel_entry.get().title().strip()
+            Código = self.Codigo_entry.get().upper().strip()
+            Validade = self.Validade_entry.get().strip()
+            Volume = self.Volume_entry.get().strip()
+            OBS = self.OBS_entry.get().strip()
+            
+            if ID.isnumeric() == False or len(ID) > 8 or len(ID) < 5:
+                messagebox.showerror('Erro ao inserir ID','Por favor, insira um número \ninteiro válido de 5 a 8 dígitos \nno campo ID. ')
+            
+            elif id_exists(ID):
+                messagebox.showerror('Erro ao inserir ID',f'Não é possível inserir o \nitem pois o ID {ID} \njá foi cadastrado.\n\nPor favor, insira um ID \nainda não utilizado.')
+            
+            elif ( (len(Validade.split('/')[0])!=2 or Validade.split('/')[0].isdigit == False) or
+                   (len(Validade.split('/')[1])!=2 or Validade.split('/')[1].isdigit == False) or
+                   (len(Validade.split('/')[2])!=4 or Validade.split('/')[2].isdigit == False) ):
+                messagebox.showerror('Erro ao inserir a Validade','Por favor, insira a data de validade \nno padrão dd/mm/AAAA')
+            
+            elif Identificador not in Lista:
+                messagebox.showerror('Erro ao inserir dados', 'Por favor, selecione um \nidentificador válido.')      
+            
+            elif Responsável == '' or Código == '' or Volume == '':
+                messagebox.showerror('Erro ao inserir dados', 'Por favor, preencha todos \nnos campos pertinentes')
+                
+            else:
+                
+                insert_itens(Identificador, ID, Código, Validade, Responsável, Volume, OBS)
+                
+                #adicionando novos Códigos a lista de Códigos
+                if Código in self.códigos:
+                    pass
+                else:
+                    followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
+                    self.Codigo_entry.configure(values = followup_Códigos)
+                    self.combo_código.configure(values = followup_Códigos)
+                
+                #adicionando novos Nomes a lista de responsáveis
+                if Responsável in self.Responsáveis:
+                    pass
+                else:
+                    followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
+                    self.Responsavel_entry.configure(values = followup_Responsáveis)
+                    self.combo_Resp.configure(values = followup_Responsáveis)
+
+                add_to_TREEVIEW()
+                add_to_TREEVIEW1()
+                messagebox.showinfo('Inserção bem sucedida!',f'O item {ID} foi inserido com sucesso!')
+                    
+        
+        #criando botão para INSERIR dados
+        self.INSERIR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='➕ Inserir',command = INSERIR , 
+                                font=("arial",12), height=30, width=65,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#080278')
+        self.INSERIR_Button.place(x=18+215+12+117+58,y=50+65+63+54)
+        
+
+        #criando função para deletar itens
+        def DELETAR():
+            
+            ID = self.ID_entry.get()
+            
+            
+            if ID.isnumeric() == False or len(ID) > 8 or len(ID) < 5:
+                messagebox.showerror('Erro ao deletar ID','Por favor, selecione \no item que deseja deletar.\n\nOu, insira um número inteiro \nválido de 5 a 8 dígitos \nno campo ID.')
+            
+            elif id_exists(ID) == False:
+                messagebox.showerror('Erro ao deletar ID',f'Não é possível deletar o \nitem pois o ID {ID} \nainda não foi cadastrado.\n\nPor favor, tente deletar apenas \nitens existentes.')
+            else:
+                resposta = messagebox.askyesno('Atenção ao deletar', f'Tem certeza que deseja\ndeletar o item (ID: {ID})?')
+                
+                if resposta == 1:
+                    delete_itens(ID)
+                    add_to_TREEVIEW()
+                    add_to_TREEVIEW1()
+                    messagebox.showinfo('Exclusão bem sucedida!',f'Item {ID} deletado com sucesso.')
+                    
+                else:
+                    pass
+            
+        #criando botão para DELETAR dados
+        self.DELETAR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='✖️ Deletar',command = DELETAR, 
+                                font=("arial",12), height=30, width=65,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#a60202', hover_color ='#ba2929' )
+        self.DELETAR_Button.place(x=18+215+12+117+60+166,y=50+65+63+54)
+        
+        
+        #criando função para atualização de dados
+        def ATUALIZAR():
+            
+            Lista = ['EC','PT','MP','GR']
+            
+            Identificador = self.Identficador_entry.get()
+            ID = self.ID_entry.get().strip().replace(' ', '')
+            Responsável = self.Responsavel_entry.get().title().strip()
+            Código = self.Codigo_entry.get().upper().strip()
+            Validade = self.Validade_entry.get().strip()
+            Volume = self.Volume_entry.get().strip()
+            OBS = self.OBS_entry.get().strip()
+            
+            if ID.isnumeric() == False or len(ID) > 8 or len(ID) < 5:
+                messagebox.showerror('Erro ao atualizar ID','Por favor, selecione \no item que deseja atualizar.\n\nOu, insira o ID que deseja\natualizar no campo ID. ')
+            
+            elif id_exists(ID) == False:
+                messagebox.showerror('Erro ao atualizar ID',f'Não é possível atualizar o \nitem pois o ID {ID} \nainda não foi cadastrado.\n\nPor favor, atualize apenas itens \nexistentes.')
+            
+            elif ( (len(Validade.split('/')[0])!=2 or Validade.split('/')[0].isdigit == False) or
+                   (len(Validade.split('/')[1])!=2 or Validade.split('/')[1].isdigit == False) or
+                   (len(Validade.split('/')[2])!=4 or Validade.split('/')[2].isdigit == False) ):
+                messagebox.showerror('Erro ao inserir a Validade','Por favor, insira a data de validade \nno padrão dd/mm/AAAA')
+                
+            elif Identificador not in Lista:
+                messagebox.showerror('Erro ao inserir dados', 'Por favor, selecione um \nidentificador válido.')      
+            
+            elif Responsável == '' or Código == '' or Volume == '':
+                messagebox.showerror('Erro ao inserir dados', 'Por favor, preencha todos \nos campos pertinentes')
+                
+            else:
+                  
+                update_itens(Identificador, ID, Código, Validade, Responsável, Volume, OBS)
+                
+                #adicionando novos Códigos a lista de Códigos
+                if Código in self.códigos:
+                    pass
+                else:
+                    followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
+                    self.Codigo_entry.configure(values = followup_Códigos)
+                    self.combo_código.configure(values = followup_Códigos)
+                
+                #adicionando novos Nomes a lista de responsáveis
+                if Responsável in self.Responsáveis:
+                    pass
+                else:
+                    followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
+                    self.Responsavel_entry.configure(values = followup_Responsáveis)
+                    self.combo_Resp.configure(values = followup_Responsáveis)
+
+                add_to_TREEVIEW()
+                add_to_TREEVIEW1()
+                messagebox.showinfo('Atualização bem sucedida!',f'O item {ID} foi atualizado com sucesso!')
+              
+                
+        
+        #criando botão para ATUALIZAR dados
+        self.ATUALIZAR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='✏ Atualizar',command = ATUALIZAR, 
+                                font=("arial",12), height=30, width=73,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#02783b', hover_color ='#179c57'  )
+        self.ATUALIZAR_Button.place(x=18+215+12+117+60+77,y=50+65+63+54)
+        
+        #criando botão limpar
+        self.LIMPAR_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='✨Limpar',text_color='black',command = clear_all ,  
+                                font=("arial",11), height=20, width=30,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#e6a902', hover_color ='#b88702'  )#fg_color = 'silver', hover_color ='white')
+        self.LIMPAR_Button.place(x=20,y=65)
+        
+        #criando função gatilho para botão de busca
+        def busca_button():
+            
+            lista_filtro = ['ID','Vencidos','Vence em X dias','Vence depois de X dias','Identif.','Código','Resp.','Validade','Volume']
+            
+            if self.Busca_entry.get().upper() == 'VENCIDOS' or self.Filtro_entry.get() == 'Vencidos':
+                resultado = add_to_TREEVIEW()
+                messagebox.showinfo('Resultado da busca', f'Foram encontrados {resultado} \nitens vencidos.')
+                
+            elif self.Filtro_entry.get() == 'Vence em X dias':
+                if self.Busca_entry.get().replace('dias','').strip().isnumeric() == True: 
+                    busca = self.Busca_entry.get().replace('dias','').strip()
+                    resultado = add_to_TREEVIEW()
+                    if resultado > 1:
+                        messagebox.showinfo('Resultado da busca', f'Foram encontrados {resultado} \nitens que vencerão nos\npróximos {busca} dias.')
+                    elif resultado == 0:
+                        messagebox.showinfo('Resultado da busca', 'Nenhum item foi encontrado.')
+                    else:
+                        messagebox.showinfo('Resultado da busca', f'Foi encontrado apenas 1 \nitem que vencerá nos\npróximos {busca} dias.')
+                
+                else:
+                    messagebox.showerror('Erro ao buscar','Por favor, degite um número de dias\nválido para realizar a busca.')
+            
+            elif self.Filtro_entry.get() == 'Vence depois de X dias':
+                if self.Busca_entry.get().replace('dias','').strip().isnumeric() == True: 
+                    busca = self.Busca_entry.get().replace('dias','').strip()
+                    resultado = add_to_TREEVIEW()
+                    if resultado > 1:
+                        messagebox.showinfo('Resultado da busca', f'Foram encontrados {resultado} \nitens que vencerão\ndepois de {busca} dias daqui.')
+                    elif resultado == 0:
+                        messagebox.showinfo('Resultado da busca', 'Nenhum item foi encontrado.')
+                    else:
+                        messagebox.showinfo('Resultado da busca', f'Foi encontrado apenas 1 \nitem que vencerá\ndepois de {busca} dias daqui.')
+                
+                else:
+                    messagebox.showerror('Erro ao buscar','Por favor, degite um número de dias\nválido para realizar a busca.')
+            
+            elif self.Filtro_entry.get() in lista_filtro and self.Busca_entry.get() != '':
+                resultado = add_to_TREEVIEW()
+                
+                if resultado != 0 and self.Filtro_entry.get() != 'ID':
+                    if resultado != 1:
+                        messagebox.showinfo('Resultado da busca', f'Foram encontrados {resultado} itens.')
+                    else:
+                        messagebox.showinfo('Resultado da busca', f'Apenas 1 item foi encontrado.')
+                        
+                elif resultado != 0 and self.Filtro_entry.get() == 'ID':  
+                    pass
+                
+                else:
+                    messagebox.showinfo('Resultado da busca', 'Nenhum item foi encontrado.')
+                    
+            else:
+                messagebox.showinfo('Busca vazia', 'Por favor, digite sua pesquisa\nna barra de busca e selecione\num dos filtros listados.')
+        
+        # criando botão de gatilho para  buscar de itens
+        def take_entry_Busca():
+            return self.Busca_entry.get()
+        self.Busca_Button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),text='🔍',text_color = 'black',command = busca_button , 
+                                font=("arial",18), height=35, width=35,corner_radius=8, border_color='silver',
+                                border_width=1.5, fg_color = 'silver', hover_color ='white'  ) 
+        self.Busca_Button.place(x=18+208,y=25)
+            
+        ####  CRIANDO TREEVIEW PARA ABA "Controle de Dados"  #################################################
+        
+        #criando frame da treeview
+        self.TREEVIEW_Frame = CTkFrame(self.tabview.tab("Controle de Dados"))
+        self.TREEVIEW_Frame.place(x=20,y=285)
+        
+        #criando um estilo para Treeview
+        self.style = Style(self.TREEVIEW_Frame)
+        
+        self.style.theme_use('clam')
+        self.style.configure('Treeview', font = ("arial",9),foreground='black',background='silver',fieldbackround='black')
+        self.style.map('Treeview', background=[('selected','#012563')])#'#036491')])
+        
+        #criando scrollbar para treeview
+        self.TREEVIEW_scrollbar = Scrollbar(self.TREEVIEW_Frame)
+        self.TREEVIEW_scrollbar.pack(side=RIGHT,fill=Y )
+        
+        # #criando Treeview
+        self.TREEVIEW = Treeview(self.TREEVIEW_Frame,height=7,yscrollcommand=self.TREEVIEW_scrollbar.set )
+        self.TREEVIEW.pack()#place(x=18,y=285)
+        # #ativando o click da scrollbar
+        self.TREEVIEW_scrollbar.configure(command=self.TREEVIEW.yview)
+        
+        #criando colunas
+        self.TREEVIEW['columns'] = ('Identif.','ID','Código','Validade','Responsável','Volume')
+        self.TREEVIEW.column('#0', width=0, stretch=NO)
+        self.TREEVIEW.column('Identif.',anchor=CENTER, width=70)
+        self.TREEVIEW.column('ID',anchor=CENTER, width=102)
+        self.TREEVIEW.column('Código',anchor=CENTER, width=110)
+        self.TREEVIEW.column('Responsável',anchor=CENTER, width=132)
+        self.TREEVIEW.column('Validade',anchor=CENTER, width=112)
+        self.TREEVIEW.column('Volume',anchor=CENTER, width=101)
+        
+        #inserindo nome das colunas
+        self.TREEVIEW.heading('Identif.', text='Identif.')
+        self.TREEVIEW.heading('ID', text='ID')
+        self.TREEVIEW.heading('Código', text='Código')
+        self.TREEVIEW.heading('Responsável', text='Responsável')
+        self.TREEVIEW.heading('Validade', text='Validade')
+        self.TREEVIEW.heading('Volume', text='Volume')
+        
+        
+        self.TREEVIEW.bind('<ButtonRelease>', display_data)
+        
+        self.add_to_Treeview_button = ctk.CTkButton(self.tabview.tab("Controle de Dados"),command = add_to_TREEVIEW())
+        # add_to_TREEVIEW()
+        
+        ##### CRIANDO ABA DE "Correções" #################################################################
+        
+        #criando label de aviso
+        self.Aviso_Label = ctk.CTkLabel(self.tabview.tab("Correções"), text = """*Use apenas para corrigir códigos ou responsáveis com erros de digitação.\n*Não use para alterar itens com cadastro incorreto!""",
+                                        font=("arial",13), justify = "center")
+        self.Aviso_Label.pack(pady=5)
+        
+        #criando frame para aba alterações
+        self.Alteração_Frame = ctk.CTkFrame(self.tabview.tab("Correções"),
+                                            width=700*0.5, height=510*0.75, border_color='grey',
+                                            border_width = 2, fg_color='#f2f2f2')
+        self.Alteração_Frame.pack(pady=10)
+        
+      
+            
+        #criando Label para correção de códigos velhos
+        self.Label_Alteração_código = ctk.CTkLabel(self.Alteração_Frame, text='Correção de Códigos', text_color='#4e4f4f',
+                                               font=("arial",16,"bold"))
+        self.Label_Alteração_código.place(x = 30, y =17+5 )                                       
+        self.Label_combo_código = ctk.CTkLabel(self.Alteração_Frame, text='Velho:', text_color='black',
+                                               font=("arial",14,"bold"))
+        self.Label_combo_código.place(x=30,y=50)
+        #criando combobox para correção de códigos velhos
+        self.combo_código = ctk.CTkComboBox(self.Alteração_Frame,values = self.códigos , 
+                                        width=150, height=35, font=('arial',14))
+        self.combo_código.place(x=29.5,y=50+25)
+        
+        #criando Label Novo para correção de códigos novos
+        self.Label_combo_código = ctk.CTkLabel(self.Alteração_Frame, text='Novo:', text_color='black',
+                                               font=("arial",14,"bold"))
+        self.Label_combo_código.place(x=30+155,y=50)
+        #criando combobox para correção de códigos novos
+        self.entry_código_novo = ctk.CTkEntry(self.Alteração_Frame, 
+                                        width=135, height=35, font=('arial',14))
+        self.entry_código_novo.place(x=29.5+155,y=50+25)
+        
+        
+        #criando Label para correção de responsáveis velhos
+        self.Label_Alteração_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Correção de Responsáveis', text_color='#4e4f4f',
+                                               font=("arial",16,"bold"))
+        self.Label_Alteração_Resp.place(x = 30, y =17+130 )                                       
+        self.Label_combo_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Velho:', text_color='black',
+                                               font=("arial",14,"bold"))
+        self.Label_combo_Resp.place(x=30,y=50+125)
+        #criando combobox para correção de responsáveis velhos
+        self.combo_Resp = ctk.CTkComboBox(self.Alteração_Frame,values = self.Responsáveis ,
+                                        width=150, height=35, font=('arial',14))
+        self.combo_Resp.place(x=29.5,y=50+25+125)
+        
+        #criando Label da combobox para correção de responsáveis novos
+        self.Label_combo_Resp = ctk.CTkLabel(self.Alteração_Frame, text='Novo:', text_color='black',
+                                               font=("arial",14,"bold"))
+        self.Label_combo_Resp.place(x=30+155,y=50+125)
+        #criando combobox para correção de responsáveis novos
+        self.entry_Resp_novo = ctk.CTkEntry(self.Alteração_Frame, 
+                                        width=135, height=35, font=('arial',14))
+        self.entry_Resp_novo.place(x=29.5+155,y=50+25+125)
+      
+    
+        #criando função para atualização de dados da aba correção
+        def CORRIGIR_Atualizar():
+            
+            Código_wrong = self.combo_código.get()
+            Código_right = self.entry_código_novo.get().upper().strip()
+            
+            Resp_wrong = self.combo_Resp.get()
+            Resp_right = self.entry_Resp_novo.get().title().strip()
+            
+            
+            
+            if Código_wrong == ''  and Código_right == '' and Resp_wrong == '' and Resp_right == '':
+                messagebox.showerror('Erro ao Corrigir','Por favor, selecione o parâmetro \nque deseja corrigir.')
+                  
+            elif Código_wrong != '' and Resp_wrong != '':
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas\numa categoria por vez.')
+                
+            #condição código correto
+            elif Código_wrong != ''  and Código_right != '' and Resp_wrong == '' and Resp_right == '':
+                
+                if Código_wrong == Código_right:
+                    
+                    messagebox.showerror('Erro ao Corrigir','Não é possível atualizar parâmetros\npara o mesmo valor.')
+                    
+                else:
+                
+                    if codigo_exists(Código_wrong) == True:
+                        
+                        resposta = messagebox.askyesno('Atenção ao atualizar', f'Tem certeza que deseja\natualizar o código {Código_wrong} \npara {Código_right}?\n\nA atualização deve ser feita apenas\npara parâmetros que foram\ncadastrados com erro de digitação.\n\nNão use para corrigir itens\ncadastrados de forma incorreta!')
+                        
+                        if resposta == 1:
+                            data_correction(Código_wrong, Código_right, 'Códigos', 'Atualizar')
+                            
+                            add_to_TREEVIEW()
+                            add_to_TREEVIEW1()
+                            
+                            followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
+                            self.Codigo_entry.configure(values = followup_Códigos)
+                            self.combo_código.configure(values = followup_Códigos)
+                            
+                            messagebox.showinfo('Atualização bem sucedida!',f'O código {Código_wrong} foi atualizado \npara {Código_right} com sucesso!')
+                        
+                        else:
+                            pass
+                        
+                    else:
+                        messagebox.showerror('Erro ao Corrigir','Por favor, selecione um código \njá cadastrado.')
+            
+                
+            #condição responsável correto
+            elif Código_wrong == ''  and Código_right == '' and Resp_wrong != '' and Resp_right != '':
+                
+                if Resp_wrong == Resp_right:
+                    
+                    messagebox.showerror('Erro ao Corrigir','Não é possível atualizar parâmetros\npara o mesmo valor.')
+                    
+                else:
+                
+                    if resp_exists(Resp_wrong) == True:
+                        
+                        resposta = messagebox.askyesno('Atenção ao atualizar', f'Tem certeza que deseja\natualizar o responsável {Resp_wrong} \npara {Resp_right}?\n\nA atualização deve ser feita apenas \npara parâmetros que foram \ncadastrados com erro de digitação.\n\nNão use para corrigir itens\ncadastrados de forma incorreta!')
+                        
+                        if resposta == 1:
+                          
+                            data_correction(Resp_wrong, Resp_right, 'Responsáveis', 'Atualizar')
+                            
+                            add_to_TREEVIEW()
+                            add_to_TREEVIEW1()
+                            
+                            followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
+                            self.Responsavel_entry.configure(values = followup_Responsáveis)
+                            self.combo_Resp.configure(values = followup_Responsáveis)
+                            
+                            messagebox.showinfo('Atualização bem sucedida!',f'O responsável {Resp_wrong} foi atualizado \npara {Resp_right} com sucesso!')
+                        
+                        else:
+                            pass
+                        
+                    else:
+                        messagebox.showerror('Erro ao Corrigir','Por favor, selecione um responsável \njá cadastrado.')
+                        
+            # elif Código_right != '' and Resp_wrong != '' and Resp_right != '':
+            
+            elif Resp_wrong == '' and Resp_right == '' and Código_wrong != ''  and Código_right == '' :
+                
+                messagebox.showerror('Erro ao Corrigir','Não é possível cadastrar um\nparâmetro vazio.')
+            
+            elif Resp_wrong == '' and Resp_right == '' and Código_wrong == ''  and Código_right != '' :
+                
+                messagebox.showerror('Erro ao Corrigir','Por favor, selecione o parâmetro \nque deseja corrigir.')
+            
+            elif Resp_wrong != '' and Resp_right == '' and Código_wrong == ''  and Código_right == '' :
+                
+                messagebox.showerror('Erro ao Corrigir','Não é possível cadastrar um\nparâmetro vazio.')
+            
+            elif Resp_wrong == '' and Resp_right != '' and Código_wrong == ''  and Código_right == '' :
+                
+                messagebox.showerror('Erro ao Corrigir','Por favor, selecione o parâmetro \nque deseja corrigir.')
+    
+            else:
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas\numa categoria por vez.')
+                
+        
+        #criando função para exclusão de dados da aba correção
+        def CORRIGIR_Deletar():
+            
+            Código_wrong = self.combo_código.get()
+            Código_right = self.entry_código_novo.get().upper().strip()
+            
+            Resp_wrong = self.combo_Resp.get()
+            Resp_right = self.entry_Resp_novo.get().title().strip()
+            
+            
+            
+            if Código_wrong == '' and Resp_wrong == '':
+                messagebox.showerror('Erro ao Corrigir','Por favor, selecione o parâmetro \nque deseja corrigir.')
+                  
+            elif Código_wrong != '' and Resp_wrong != '':
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas\numa categoria por vez.')
+                  
+            #condição código correto
+            elif Código_wrong != '':
+                
+                if codigo_exists(Código_wrong) == True:
+                    
+                    resposta = messagebox.askyesno('Atenção ao deletar', f'Tem certeza que deseja\ndeletar o código {Código_wrong}?\n\nA exclusão deve ser feita apenas para\nparâmetros que foram cadastrados\ncom erro de digitação.')
+                    
+                    if resposta == 1:
+                    
+                        data_correction(Código_wrong, Código_right, 'Códigos', 'Deletar')
+                        
+                        add_to_TREEVIEW()
+                        add_to_TREEVIEW1()
+                        
+                        followup_Códigos = tuple_to_list(fetch_itens(Table_Códigos))
+                        self.Codigo_entry.configure(values = followup_Códigos)
+                        self.combo_código.configure(values = followup_Códigos)
+                        
+                        messagebox.showinfo('Exclusão bem sucedida!',f'O item {Código_wrong} foi excluído com sucesso!')
+                    
+                    else:
+                        pass
+                
+                else:
+                    messagebox.showerror('Erro ao Corrigir','Por favor, selecione um código \njá cadastrado.')
+                
+            #condição responsável correto
+            elif Resp_wrong != '':
+                
+                if resp_exists(Resp_wrong) == True:
+                    
+                    resposta = messagebox.askyesno('Atenção ao deletar', f'Tem certeza que deseja\ndeletar o responsável {Resp_wrong}?\n\nA exclusão deve ser feita apenas para\nparâmetros que foram cadastrados\ncom erro de digitação.')
+                    
+                    if resposta == 1:
+                    
+                        data_correction(Resp_wrong, Resp_right, 'Responsáveis', 'Deletar')
+                        
+                        add_to_TREEVIEW()
+                        add_to_TREEVIEW1()
+                        
+                        followup_Responsáveis = tuple_to_list(fetch_itens(Table_Resp))
+                        self.Responsavel_entry.configure(values = followup_Responsáveis)
+                        self.combo_Resp.configure(values = followup_Responsáveis)
+                        
+                        messagebox.showinfo('Exclusão bem sucedida!',f'O item {Resp_wrong} foi excluído com sucesso!')
+                    
+                    else:
+                        pass
+                    
+                else:
+                    messagebox.showerror('Erro ao Corrigir','Por favor, selecione um responsável \njá cadastrado.')
+            
+            else:
+                messagebox.showerror('Erro ao Corrigir','Por favor, corrija apenas uma \ncategoria por vez.')
+                
+        #criando botão para ATUALIZAR dados
+        self.ATUALIZAR_Button_correções = ctk.CTkButton(self.Alteração_Frame,text='⬆ Atualizar',command = CORRIGIR_Atualizar , 
+                                font=("arial",19), height=35, width=110,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#02783b', hover_color ='#179c57'  )
+        self.ATUALIZAR_Button_correções.place(x=60,y=50+65+63+54+35)
+        
+          
+        #criando botão deletar na aba correções
+        self.DELETAR_Button_correções = ctk.CTkButton(self.Alteração_Frame,text='❌ Deletar',command = CORRIGIR_Deletar , 
+                                font=("arial",19), height=35, width=100,corner_radius=8, border_width=1.5 ,
+                                fg_color = '#a60202', hover_color ='#ba2929' )
+        self.DELETAR_Button_correções.place(x=185,y=50+65+63+54+35)
+        
+        
+        #criando função para limpar aba correções
+        def clear_corrections():
+            
+            self.combo_código.set('')
+            self.entry_código_novo.delete(0,END)
+        
+            self.combo_Resp.set('')
+            self.entry_Resp_novo.delete(0,END)
+            
+        
+        
+        #criando botão limpar
+        self.LIMPAR_Button_correções = ctk.CTkButton(self.Alteração_Frame,text='✨Limpar',text_color='black',command = clear_corrections ,  
+                                font=("arial",17), height=30, width=50,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#e6a902', hover_color ='#b88702'  )#fg_color = 'silver', hover_color ='white')
+        self.LIMPAR_Button_correções.place(x=130,y=330)   
+        
+        
+        ##### CRIANDO ABA DE "Relatório" #################################################################
+        
+        #Label aba relatório
+        self.Relat_Label = ctk.CTkLabel(self.tabview.tab('Relatório'), text='Relatório | Indicadores',
+                                        font=("arial",30))
+        self.Relat_Label.place(x=200,y=20)
+        
+        #criando frame para exibir relatório
+        h_var=37
+        self.Relat_frame = ctk.CTkScrollableFrame(self.tabview.tab('Relatório') , width=600, height=220+h_var,
+                                                  border_width=1.5, fg_color='#f2f2f2' )
+        self.Relat_frame.place(x=30,y=80)
+        
+        #função para mostrar painel de indicadores
+        def display_indicators():
+            
+            global dict_Var_Resp
+            global dict_Data_Resp
+            
+            itens = tuple_to_list(fetch_itens(Table_Resp))
+            itens.pop(0)
+            
+            dict_Var_Resp = {}
+            dict_Data_Resp = {}
+            
+            if (len(itens)%3)==0:
+                r = int(len(itens)/3)
+            else:
+                r = (len(itens)//3)+1
+            
+            count = 0
+            n = 0
+            valor = 3
+            for j in range(0,r):
+                count1 = 0
+                
+                if j == r-1 and len(itens)%3 !=0 :
+                    valor = len(itens)%3
+                for k in range(0,valor):
+                    
+                    data_list1 = busca_relatório(itens[n])
+                    vencidos = N_vencidos(data_list1, 1)
+                    vencidos15 = N_vencidos(data_list1, 0)
+                    itens_Ok = N_vencidos(data_list1, 2)
+                    
+                    dict_Data_Resp[itens[n]] = [vencidos,vencidos15,itens_Ok]
+                    
+                    
+                    if len(vencidos) != 0:
+                    
+                        self.Resp_Frame = ctk.CTkFrame(self.Relat_frame,width=185,height=110, border_width=1.5)#, fg_color='#ff0303' )
+                        self.Resp_Frame.grid(row=count,column=count1, padx = 8, pady = 8)
+                        
+                        self.Resp_Frame_name = ctk.CTkFrame(self.Resp_Frame,width=170,height=35.3,border_width=1.5, fg_color='#b50404' )
+                        self.Resp_Frame_name.place(x=7,y=5)
+                        
+                        self.check_var = ctk.BooleanVar(value=False)
+                        self.Resp_Frame_Check = ctk.CTkCheckBox(self.Resp_Frame_name , text=f' {itens[n]}',font=("arial",17,'bold'), bg_color='#b50404',
+                                                                border_color='white',corner_radius= 20, text_color='white',
+                                                                hover_color = 'grey',variable=self.check_var,onvalue=True,offvalue=False,
+                                                                checkbox_width=20,checkbox_height=20)
+                        self.Resp_Frame_Check.place(x=7,y=5)
+                        
+                        dict_Var_Resp[itens[n]] = (self.check_var,self.Resp_Frame_Check,'Vencidos')
+                        
+                        self.N_itens = ctk.CTkLabel(self.Resp_Frame , text=f'Nº de itens: {len(data_list1)}',font=("arial",12))
+                        self.N_itens.place(x=10,y=40)
+                        
+                        self.N_vencidos = ctk.CTkLabel(self.Resp_Frame , text=f'Vencidos: {len(vencidos)}',font=("arial",12,'bold'))
+                        self.N_vencidos.place(x=10,y=60)
+                        
+                        self.N_vencidos15 = ctk.CTkLabel(self.Resp_Frame , text=f'Vence em 15 dias: {len(vencidos15)}',font=("arial",12,'bold'))
+                        self.N_vencidos15.place(x=10,y=80)
+                        
+                    elif len(vencidos15) != 0:
+                        
+                        self.Resp_Frame = ctk.CTkFrame(self.Relat_frame,width=185,height=110, border_width=1.5)#, fg_color='#ff0303' )
+                        self.Resp_Frame.grid(row=count,column=count1, padx = 8, pady = 8)
+                        
+                        self.Resp_Frame_name = ctk.CTkFrame(self.Resp_Frame,width=170,height=35.3,border_width=1.5, fg_color='#c29502' )
+                        self.Resp_Frame_name.place(x=7,y=5)
+                        
+                        self.check_var = ctk.BooleanVar(value=False)
+                        self.Resp_Frame_Check = ctk.CTkCheckBox(self.Resp_Frame_name , text=f' {itens[n]}',font=("arial",17,'bold'), bg_color='#c29502',
+                                                                border_color='white',corner_radius= 20, text_color='white',
+                                                                hover_color = 'grey',variable=self.check_var,onvalue=True,offvalue=False,
+                                                                checkbox_width=20,checkbox_height=20)
+                        self.Resp_Frame_Check.place(x=7,y=5)
+                        
+                        dict_Var_Resp[itens[n]] = (self.check_var,self.Resp_Frame_Check,'Vence_em_15')
+                        
+                        self.N_itens = ctk.CTkLabel(self.Resp_Frame , text=f'Nº de itens: {len(data_list1)}',font=("arial",12))
+                        self.N_itens.place(x=10,y=40)
+                        
+                        self.N_vencidos = ctk.CTkLabel(self.Resp_Frame , text=f'Vencidos: {len(vencidos)}',font=("arial",12,'bold'))
+                        self.N_vencidos.place(x=10,y=60)
+                        
+                        self.N_vencidos15 = ctk.CTkLabel(self.Resp_Frame , text=f'Vence em 15 dias: {len(vencidos15)}',font=("arial",12,'bold'))
+                        self.N_vencidos15.place(x=10,y=80)
+                        
+                    else:
+                        
+                        self.Resp_Frame = ctk.CTkFrame(self.Relat_frame,width=185,height=110, border_width=1.5)#, fg_color='#ff0303' )
+                        self.Resp_Frame.grid(row=count,column=count1, padx = 8, pady = 8)
+                        
+                        self.Resp_Frame_name = ctk.CTkFrame(self.Resp_Frame,width=170,height=35.3,border_width=1.5, fg_color='#016634' )
+                        self.Resp_Frame_name.place(x=7,y=5)
+                        
+                        self.check_var = ctk.BooleanVar(value=False)
+                        self.Resp_Frame_Check = ctk.CTkCheckBox(self.Resp_Frame_name , text=f' {itens[n]}',font=("arial",17,'bold'), bg_color='#016634',
+                                                                border_color='white',corner_radius= 20, text_color='white',
+                                                                hover_color = 'grey',variable=self.check_var,onvalue=True,offvalue=False,
+                                                                checkbox_width=20,checkbox_height=20)
+                        self.Resp_Frame_Check.place(x=7,y=5)
+                        
+                        dict_Var_Resp[itens[n]] = (self.check_var,self.Resp_Frame_Check,'Ok')
+                        
+                        self.N_itens = ctk.CTkLabel(self.Resp_Frame , text=f'Nº de itens: {len(data_list1)}',font=("arial",12))
+                        self.N_itens.place(x=10,y=40)
+                        
+                        self.N_vencidos = ctk.CTkLabel(self.Resp_Frame , text=f'Vencidos: {len(vencidos)}',font=("arial",12,'bold'))
+                        self.N_vencidos.place(x=10,y=60)
+                        
+                        self.N_vencidos15 = ctk.CTkLabel(self.Resp_Frame , text=f'Vence em 15 dias: {len(vencidos15)}',font=("arial",12,'bold'))
+                        self.N_vencidos15.place(x=10,y=80)
+                        
+                    count1 += 1
+                    n += 1
+                count += 1
+            
+            
+        #Criando botão para refresh♻️↻🔄📦📥📬
+        self.refresh_button_1 = ctk.CTkButton(self.tabview.tab('Relatório'),text='',command = display_indicators() , 
+                                font=("helvitica",12,'bold'), height=25, width=30,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = 'grey', hover_color ='#a1a1a1')
+        self.refresh_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='Recarregar',command = display_indicators , 
+                                font=("helvitica",12,'bold'), height=25, width=30,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = 'grey', hover_color ='#a1a1a1')
+        self.refresh_button.place(x=568,y=52)
+        
+        
+        #criando função para selecionar apenas itens vencidos
+        def select_vencidos():
+            
+            for value in dict_Var_Resp.values():
+                var,my_check,status = value
+                if status == 'Vencidos':
+                    my_check.deselect()
+                    my_check.toggle()
+        
+        #criando botão para selecionar itens vencidos ❕✅✔️
+        h_var=40
+        self.select_vencidos_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='❕ Vencidos',command = select_vencidos , 
+                                font=("helvitica",12,'bold'), height=25, width=80,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = '#b50404', hover_color ='#e30202')
+        self.select_vencidos_button.place(x=32,y=235+85+h_var)
+        
+        #criando função para selecionar apenas itens que vencem dentro de 15 dias
+        def select_vencidos15():
+            
+            for value in dict_Var_Resp.values():
+                var,my_check,status = value
+                if status == 'Vence_em_15':
+                    my_check.deselect()
+                    my_check.toggle()
+                    
+        #criando botão para selecionar itens que vencem dentro de 15 dias ❕✅✔️
+        self.select_vencidos15_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='⚠ 15 dias',command = select_vencidos15 , 
+                                font=("helvitica",12,'bold'), height=25, width=80,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = '#ab8903', hover_color ='#e3b602')
+        self.select_vencidos15_button.place(x=32+90,y=235+85+h_var)
+        
+        #criando função para selecionar apenas itens que vencem dentro de 15 dias
+        def select_Oks():
+            
+            for value in dict_Var_Resp.values():
+                var,my_check,status = value
+                if status == 'Ok':
+                    my_check.deselect()
+                    my_check.toggle()
+                    
+        #criando botão para selecionar itens Ok ✔️
+        self.select_Ok_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='✔️ Ok  ',command = select_Oks , 
+                                font=("helvitica",12,'bold'), height=25, width=80,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = '#016634', hover_color ='#02993c')
+        self.select_Ok_button.place(x=32+90+88,y=235+85+h_var)
+        
+        #criando função para limpar itens selecionados no dashboard
+        def clear_checked_itens():
+            
+            for value in dict_Var_Resp.values():
+                var,my_check,status = value
+                my_check.deselect()
+                
+            self.trazer_todos_check.deselect()
+            self.trazer_vence15_check.deselect()
+        
+        # criando botão para limpar itens do relatório selecionados
+        self.limpar_frames_button = ctk.CTkButton(self.tabview.tab('Relatório'),text='✨Limpar',command = clear_checked_itens , 
+                                font=("helvitica",12), height=25, width=30,corner_radius=8,border_width=1.5 ,text_color='black',
+                                fg_color = '#e6a902', hover_color ='#b88702')
+        self.limpar_frames_button.place(x=35,y=52)
+        
+        #criando frame para checkbox trazer_vence15_check
+        self.trazer_vence15_Frame = ctk.CTkFrame(self.tabview.tab('Relatório'),width=350,height=29,border_width=1.5, fg_color='#f2f2f2' )
+        self.trazer_vence15_Frame.place(x=32+90+88+94,y=235+85+h_var)
+        
+        #criando checkbox para trazer da base de dados itens que vencem em 15 dias
+        self.check_var_vence15 = ctk.BooleanVar(value=False)
+        self.trazer_vence15_check = ctk.CTkCheckBox(self.trazer_vence15_Frame , text=' Trazer dados de itens que vecem em 15 dias      ',font=("Helvitica",14),
+                                                border_color='grey', text_color='black',corner_radius=1,border_width=1.5,
+                                                hover_color = 'grey',variable=self.check_var_vence15,onvalue=True,offvalue=False,
+                                                checkbox_width=16,checkbox_height=16)
+        self.trazer_vence15_check.place(x=8,y=2)
+        
+        #criando frame para checkbox trazer_todos 222
+        self.trazer_todos_Frame = ctk.CTkFrame(self.tabview.tab('Relatório'),width=350,height=29,border_width=1.5, fg_color='#f2f2f2' )
+        self.trazer_todos_Frame.place(x=32+90+88+94,y=235+85+32+h_var)
+        #place(x=32+90+88+220,y=235+85+32)
+        
+        #criando checkbox para trazer da base de todos os itens selecionados
+        self.check_var_trazer_todos = ctk.BooleanVar(value=False)
+        self.trazer_todos_check = ctk.CTkCheckBox(self.trazer_todos_Frame , text=' Trazer dados de todos os itens                            ',font=("Helvitica",14),
+                                                border_color='grey', text_color='black',corner_radius=1,border_width=1.5,
+                                                hover_color = 'grey',variable=self.check_var_trazer_todos,onvalue=True,offvalue=False,
+                                                checkbox_width=16,checkbox_height=16)
+        self.trazer_todos_check.place(x=8,y=2)
+        
+        
+        
+        #crianção fiunção para geração de lista de itens separada por responsáveis
+        def PDF_Resp_list_Gen(dictionary):
+            
+            try:
+                caminho = filedialog.askdirectory(title = "Selecione sua pasta de destino")
+            
+            
+                f = 25.4/72
+                
+                #criando função para eração de tabelas
+                def Table_Gen(data):
+                    
+                    
+                    
+                    cabeçalho = ['Idf.','ID','Código','Validade','Revalidação','Volume','Status','R','D']
+                    
+                    data.insert(0,cabeçalho)
+                    
+                    
+                    list_height_row = [6/f]*(len(data)-1)
+                    list_height_row.insert(0, 9/f)
+                    
+                    lenght = 182/f
+                    
+                    head_color = colors.toColor('rgba(0, 115, 153, 0.9)')
+                    
+                    column_width_list = [lenght*0.06,lenght*0.11,lenght*0.19,
+                                         lenght*0.13,lenght*0.16,lenght*0.16,
+                                         lenght*0.14,lenght*0.03,lenght*0.03,]
+                    
+                    Tabela = Table(data = data,colWidths=column_width_list,rowHeights=list_height_row)
+                    
+                    Tabela.setStyle([('GRID',(0,0),(-1,-1),0.5,'GREY'),
+                                      ('BACKGROUND',(0,0),(-1,0),head_color),
+                                      ('TEXTCOLOR',(0,0),(-1,0),'white'),
+                                      ('FONTSIZE',(0,0),(-1,0),12),
+                                      ('FONTNAME',(0,0),(-1,0),'Helvetica-Bold'),
+                                      ('ALIGN',(0,0),(-1,-1),'CENTER'),
+                                      ('VALIGN',(0,0),(-1,-1),'MIDDLE')
+                                      ])
+                    
+                    return Tabela
+                
+                
+                #criando função para geração de tabelas sem cabeçalho
+                def Table_Gen_without_head(data):
+                    
+                    
+                    
+                    # cabeçalho = ['Idf.','ID','Código','Validade','Revalidação','Volume','Status','R','D']
+                    
+                    # data.insert(0,cabeçalho)
+                    
+                    
+                    list_height_row = [6/f]*(len(data))
+                    # list_height_row.insert(0, 9/f)
+                    
+                    lenght = 182/f
+                    
+                    # head_color = colors.toColor('rgba(0, 115, 153, 0.9)')
+                    
+                    column_width_list = [lenght*0.06,lenght*0.11,lenght*0.19,
+                                         lenght*0.13,lenght*0.16,lenght*0.16,
+                                         lenght*0.14,lenght*0.03,lenght*0.03,]
+                    
+                    Tabela = Table(data = data,colWidths=column_width_list,rowHeights=list_height_row)
+                    
+                    Tabela.setStyle([('GRID',(0,0),(-1,-1),0.5,'GREY'),
+                                      # ('BACKGROUND',(0,0),(-1,0),head_color),
+                                      # ('TEXTCOLOR',(0,0),(-1,0),'white'),
+                                      # ('FONTSIZE',(0,0),(-1,0),12),
+                                      # ('FONTNAME',(0,0),(-1,0),'Helvetica-Bold'),
+                                      ('ALIGN',(0,0),(-1,-1),'CENTER'),
+                                      ('VALIGN',(0,0),(-1,-1),'MIDDLE')
+                                      ])
+                    
+                    return Tabela
+                
+                filename = f'{caminho}/Relatório de Armazenamento -  {str(datetime.today())[:19].replace(":",".")} - {getlogin()}.pdf'
+                    
+                pdf = canvas.Canvas(filename,pagesize = A4)
+                
+                
+                today = str(datetime.today())[:11].split('-')
+                
+                pdf.setLineWidth(0.7)
+                pdf.setStrokeColorRGB(0.525, 0.525, 0.525)
+                pdf.drawBoundary(1, 10/f, 842-(10/f), 595-(20/f), -75)
+                pdf.drawBoundary(1, 10/f+(595-(20/f))-(595-(20/f))*0.30, 842-(10/f), (595-(20/f))*0.30, -75/2)
+                pdf.drawImage('PPG2.jpg',20/f+(595-(20/f))-(595-(20/f))*0.30, 842-(12/f), (595-(20/f))*0.20, -55/2)
+                # print(20/f+(595-(20/f))-(595-(20/f))*0.30, 842-(12/f), (595-(20/f))*0.20, -55/2)
+                pdf.drawBoundary(1, 10/f+(595-(20/f))-(595-(20/f))*0.30, 842-(10/f)-75/2, (595-(20/f))*0.30, -75/2)
+                pdf.setFillColorRGB(0.525, 0.525, 0.525)
+                pdf.setFont('Helvetica-Bold',23)
+                pdf.drawString(14/f, 780, "LISTA DE ITENS DO MEZANINO")
+                pdf.setFont('Helvetica-Bold',18)
+                pdf.drawString(14/f, 755, "Separação por Responsáveis")
+                pdf.setFont('Helvetica-Bold',10)
+                pdf.drawString(410,765, "Data de Geração:")
+                pdf.setFont('Helvetica-Bold',17)
+                pdf.drawString(435,745, f"{today[2]+'/ '+today[1]+' / '+today[0]}")
+                pdf.setFont('Helvetica-Bold',12)
+                pdf.drawString(14/f, 720, "Descrição de termos:")
+                pdf.setFont('Helvetica',11)
+                pdf.drawString(14/f, 705, '"R": REVALIDADO - Assinalar com "X" para itens revalidados.')
+                pdf.drawString(14/f, 690, '"D": DESCARTADO - Assinalar com "X" para itens descartados.')
+                pdf.drawString(14/f, 675, 'Status "Ok": itens dentro da validade sem qualquer ação necessária.')
+                pdf.drawString(14/f, 660, 'Status "V. em 15 dias": itens que vencem dentro de 15 dias e necessitam de ação preventiva imediata.')
+                pdf.drawString(14/f, 645, 'Status "Vencido": itens com data de validade expirada que necessitam de ação corretiva urgente!')
+                pdf.line(10/f,  842-180-30, 597-10.8/f, 842-180-30)
+                
+                y_size_Resp = 18
+                y_size_linha = 12
+                y_space = 33
+                
+                count = 0
+                var = 190+15
+                
+                count_page = 0
+                
+                for name,data in dictionary.items():
+                    
+                    if count == 0:
+                        plenty_space = 842-(20/f)-var
+                        pdf.setLineWidth(1.5)
+                        pdf.setStrokeColorRGB(0,0,0)
+                        pdf.line(13.5/f, 841.5-((13.5+2)/f+12)-var, 597-13.5/f, 841.5-((13.5+2)/f+12)-var) 
+                        pdf.setFont('Helvetica-Bold',23)
+                        pdf.setFillColorRGB(0.525, 0.525, 0.525)
+                        pdf.drawString(14/f, 792-var, "RESPONSÁVEL:")
+                        pdf.drawString(14/f+190, 792-var, f"{name[:29]}")
+                    
+                        count_page += 1
+                        
+                        pdf.setLineWidth(1.5)
+                        pdf.setStrokeColorRGB (0.525, 0.525, 0.525)
+                        pdf.line(13.5/f-1,841.5-((13.5+2)/f+12)+0.5-var, 597-13.5/f, 841.5-((13.5+2)/f+12)+0.50-var) 
+                        pdf.setLineWidth(0.7)
+                        pdf.setStrokeColorRGB(0.525, 0.525, 0.525)
+                        pdf.drawBoundary(1, 10/f, 842-(10/f), 595-(20/f), -(842-(20/f)))
+                        pdf.setFont('Helvetica',12)
+                        pdf.setFillColorRGB(0.525, 0.525, 0.525)
+                        pdf.drawString(595-(11.7/f), 10, f"{count_page}")
+                        
+                        
+                    else:
+                        
+                        if plenty_space < 110:
+                            plenty_space = 842-(14/f)
+                            pdf.showPage()
+                            
+                            count_page += 1
+                            
+                            # pdf.setLineWidth(1.5)
+                            # pdf.setStrokeColorRGB(0,0,0)
+                            # pdf.line(13.5/f-1,808.5+0.5-(842-plenty_space), 597-13.5/f, 808.5+0.50-(842-plenty_space)) 
+                            pdf.setLineWidth(0.7)
+                            pdf.setStrokeColorRGB(0.525, 0.525, 0.525)
+                            pdf.drawBoundary(1, 10/f, 842-(10/f), 595-(20/f), -(842-(20/f)))
+                            pdf.setFont('Helvetica',12)
+                            pdf.setFillColorRGB(0.525, 0.525, 0.525)
+                            pdf.drawString(595-(11.7/f), 10, f"{count_page}")
+                            
+                        
+                        pdf.setLineWidth(1.5)
+                        pdf.setStrokeColorRGB(0,0,0)
+                        pdf.line(13.5/f,808.5-(842-plenty_space), 597-13.5/f, 808.5-(842-plenty_space))
+                        pdf.setStrokeColorRGB (0.525, 0.525, 0.525)
+                        pdf.line(13.5/f-1,808.5+0.5-(842-plenty_space), 597-13.5/f, 808.5+0.50-(842-plenty_space)) 
+                        pdf.setFont('Helvetica-Bold',23)
+                        pdf.setFillColorRGB(0.525, 0.525, 0.525)
+                        pdf.drawString(14/f, 815-(842-plenty_space), "RESPONSÁVEL:")
+                        pdf.drawString(14/f+190, 815-(842-plenty_space), f"{name[:29]}")
+                    
+                        
+                    
+                    
+                    count += 1 
+                    
+                    
+                    count_table_split = 0
+                    
+                    while True:
+                        
+                        if count_table_split != 0:
+                            
+                            pdf.showPage()
+                            count_page += 1
+                            pdf.setLineWidth(0.7)
+                            pdf.setStrokeColorRGB(0.525, 0.525, 0.525)
+                            pdf.drawBoundary(1, 10/f, 842-(10/f), 595-(20/f), -(842-(20/f)))
+                            pdf.setFont('Helvetica',12)
+                            pdf.setFillColorRGB(0.525, 0.525, 0.525)
+                            pdf.drawString(595-(11.7/f), 10, f"{count_page}")
+                            
+                            var = 0
+                            
+                            plenty_space = 842-(20/f)-var-6/f
+                            
+                            total_object_size  = (6/f)*(len(data))
+                        
+                            if total_object_size > plenty_space :
+                                
+                                list_len = int(((plenty_space))//(6/f))
+                                # print(list_len)
+                                # print(5%2)
+                            
+                                table = Table_Gen_without_head(data[:list_len])
+                                
+                                table_size = (6/f)*(len(data[:list_len]))
+                                
+                                table.wrapOn(pdf, 0, 0) 
+                                table.drawOn(pdf, 13.5/f, (842-table_size)-((13.5)/f)-var)
+                                # print(var)
+                                
+                                data = data[list_len:]
+                                
+                                # pdf.showPage()
+                                
+                                count_table_split += 1
+                                
+                                # plenty_space = 842-(20/f)-table_size
+                                
+                                if data == []:
+                                    break
+                            else:
+                                
+                                list_len = int((plenty_space)//(6/f))
+                                # print(list_len)
+                            
+                                table = Table_Gen_without_head(data[:list_len])
+                                
+                                table_size = (6/f)*(len(data[:list_len]))
+                                
+                                table.wrapOn(pdf, 0, 0) 
+                                table.drawOn(pdf, 13.5/f, (842-table_size)-((13.5)/f)-var)#133
+                                # print(var)
+                                
+                                data = data[list_len:]
+                                
+                                count_table_split += 1
+                                
+                                plenty_space = 842-(20/f)-table_size
+                                
+                                if data == []:
+                                    break
+                                
+                            
+                        else:
+                            
+                            total_object_size  = (6/f)*(len(data)-1)+9/f + y_size_linha + y_size_Resp + y_space
+                        
+                            if total_object_size > plenty_space :
+                                
+                                list_len = int(((plenty_space)-3/f-63-20)//(6/f))
+                                # print(list_len)
+                                # print(5%2)
+                            
+                                table = Table_Gen(data[:list_len])
+                                
+                                table_size = (6/f)*(len(data[:list_len]))+9/f
+                                
+                                if count != 1:
+                                    table.wrapOn(pdf, 0, 0) 
+                                    table.drawOn(pdf, 13.5/f, (842-table_size)-(842-plenty_space)-40)
+                                else:
+                                    table.wrapOn(pdf, 0, 0) 
+                                    table.drawOn(pdf, 13.5/f, (842-table_size)-((13.5+2)/f+19)-var)
+                                    
+                                data = data[list_len:]
+                                
+                                # pdf.showPage()
+                                
+                                count_table_split += 1
+                                
+                                if data == []:
+                                    break
+                            else:
+                                
+                                list_len = int(((plenty_space)-3/f-63-20)//(6/f))
+                                # print(list_len)
+                                # print(5%2)
+                            
+                                table = Table_Gen(data[:list_len])
+                                
+                                table_size = (6/f)*(len(data[:list_len]))+9/f
+                                
+                                if count != 1:
+                                    table.wrapOn(pdf, 0, 0) 
+                                    table.drawOn(pdf, 13.5/f, (842-table_size)-(842-plenty_space)-40)
+                                else:
+                                    table.wrapOn(pdf, 0, 0) 
+                                    table.drawOn(pdf, 13.5/f, (842-table_size)-((13.5+2)/f+19)-var)
+                                    
+                                data = data[list_len:]
+                                
+                                if count == 1: 
+                                    plenty_space = plenty_space-table_size-(y_size_linha + y_size_Resp + y_space)+42
+                                else:
+                                    plenty_space = plenty_space-table_size-(y_size_linha + y_size_Resp + y_space)+8
+                                
+                                count_table_split += 1
+                                
+                                if data == []:
+                                    break
+                                
+                            
+                pdf.save()
+                
+                startfile(filename)
+                
+            except:
+                pass
+        
+        
+        #função para gerar dados para tabela de cada responsável do Relatório em pdf
+        def pdf_data_gen():
+            
+            #tratando dados
+            global dict_result_Resp, dict_Data_Table
+            
+            check_list_selected_Resps = []
+            for value in dict_Var_Resp.values():
+                var,my_check,status = value
+                check_list_selected_Resps.append(var.get())
+                
+            if True in check_list_selected_Resps:
+            
+                dict_result_Resp = {}
+                
+                if self.check_var_vence15.get() == False and self.check_var_trazer_todos.get() == False:
+                    
+                    for key,value in dict_Var_Resp.items():
+                        
+                        var,my_check,status = value
+                        
+                        if var.get() == True:
+                            
+                            if status == 'Vencidos':
+                                
+                                dict_result_Resp[key] = [[dict_Data_Resp[key][0], 'Vencido']]
+                                
+                            elif status == 'Vence_em_15':
+                                
+                                dict_result_Resp[key] = [[dict_Data_Resp[key][1],'V.em 15 dias']]
+                                
+                            else:
+                                
+                                dict_result_Resp[key] = [[dict_Data_Resp[key][2], 'Ok']]
+                                
+                        
+                elif self.check_var_vence15.get() == True and self.check_var_trazer_todos.get() == False:
+                    
+                    for key,value in dict_Var_Resp.items():
+                        
+                        var,my_check,status = value
+                        
+                        if var.get() == True:
+                            
+                            if status == 'Vencidos':
+                                
+                                dict_result_Resp[key] = [[dict_Data_Resp[key][0], 'Vencido'],
+                                                         [dict_Data_Resp[key][1],'V.em 15 dias']]
+                                
+                            elif status == 'Vence_em_15':
+                                
+                                dict_result_Resp[key] = [[dict_Data_Resp[key][1],'V.em 15 dias']]
+                                
+                            else:
+                                
+                                dict_result_Resp[key] = [[dict_Data_Resp[key][2], 'Ok']]
+                                
+                
+                else:
+                    
+                    for key,value in dict_Var_Resp.items():
+                        
+                        var,my_check,status = value
+                        
+                        if var.get() == True:
+                            
+                            if status == 'Vencidos':
+                                
+                                dict_result_Resp[key] = [[dict_Data_Resp[key][0], 'Vencido'],
+                                                         [dict_Data_Resp[key][1],'V.em 15 dias'],
+                                                         [dict_Data_Resp[key][2], 'Ok']]
+                                
+                            elif status == 'Vence_em_15':
+                                
+                                dict_result_Resp[key] = [[dict_Data_Resp[key][1],'V.em 15 dias'],
+                                                         [dict_Data_Resp[key][2], 'Ok']] 
+                                
+                            else:
+                                
+                                dict_result_Resp[key] = [[dict_Data_Resp[key][2], 'Ok']]
+                                
+                        
+                
+                connection = sql.connect(f"{DB_caminho}")
+                blinker = connection.cursor()
+                
+                dict_Data_Table = {}
+                
+                for key in dict_result_Resp.keys():
+                    
+                    data_list = []
+                
+                    for n in range(len(dict_result_Resp[key])):
+                        
+                        
+                        for i in range(len(dict_result_Resp[key][n][0])):
+                        
+                            blinker.execute(f"""SELECT Identificador,Id,Código,Validade,Volume FROM {Table_Stock} 
+                                            WHERE Id = {dict_result_Resp[key][n][0][i]}""")
+                            item = blinker.fetchone()
+                            row = [item[0],item[1],item[2],item[3],'',item[4],dict_result_Resp[key][n][1],'','']  
+                            data_list.append(row)
+                    
+                    
+                    dict_Data_Table[key] = data_list        
+                            
+                connection.close()
+                
+                PDF_Resp_list_Gen(dictionary = dict_Data_Table)
+        
+            else:
+                
+                messagebox.showerror('Erro gerar relatório','Por favor, selecione pelo menos 1\nresponsável para gerar o relatório.')
+            
+            
+        
+        #criando botão para gerar relatório✔️
+        self.Report_Gen = ctk.CTkButton(self.tabview.tab('Relatório'),text='📋  Gerar Relatório  ',command = pdf_data_gen , 
+                                font=("helvitica",20,'bold'), height=30, width=258,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = '#033354',hover_color = '#054875')
+        self.Report_Gen.place(x=32,y=235+85+28+h_var)
+        
+        
+        
+        ##### CRIANDO ABA DE "Listagem" #############################################################################
+        
+        x_var = 0
+        # criando barra de buscar de itens
+        self.Label_Busca_entry_listagem = ctk.CTkLabel(self.tabview.tab("Listagem"), text='Busca:', 
+                                              font=("arial",16,"bold"))
+        self.Label_Busca_entry_listagem.place(x=20.5+x_var,y=0)
+        
+        self.Busca_entry_listagem = ctk.CTkEntry(self.tabview.tab("Listagem"), 
+                                        width=250, height=35, font=('arial',14))
+        self.Busca_entry_listagem.place(x=20+x_var,y=25)
+        
+        
+        # criando Label para ComboBox de filtro
+        self.Label_Filtro_listagem = ctk.CTkLabel(self.tabview.tab("Listagem"), text='Filtro:', 
+                                         font=("arial",14,"bold"))
+        self.Label_Filtro_listagem.place(x=19+210+45+50+x_var,y=0)
+        
+        x_f = 40
+        # criando ComboBox de filtro para busca de itens
+        self.Filtro_entry_listagem = ctk.CTkComboBox(self.tabview.tab("Listagem"),values=['ID','Vencidos','Vence em X dias','Vence depois de X dias','Identif.','Código','Resp.','Validade','Volume'] ,
+                                        width=160+x_f, height=35, font=('arial',14,'bold'),corner_radius=8)
+        self.Filtro_entry_listagem.place(x=18+210+45+50+x_var,y=25)
+    
+        
+        #criando RadioButton para trazer apenas itens vencidos
+        self.check_var_Não_vencidos_listagem = ctk.BooleanVar(value=False)
+        self.Não_vencidos_listagem = ctk.CTkCheckBox(self.tabview.tab("Listagem"), text='Não vencidos',
+                                                border_color='grey',corner_radius=1,
+                                                border_width=1.5,hover_color = 'grey',
+                                                font=("Helvitica",14),variable=self.check_var_Não_vencidos_listagem,
+                                                onvalue=True,offvalue=False,
+                                                checkbox_width=16,checkbox_height=16)
+        self.Não_vencidos_listagem.place(x=18+210+45+50+178+x_var+x_f,y=30)
+        
+        
+        
+        ####  CRIANDO TREEVIEW1 PARA ABA "Listagem"  #################################################
+        
+        #criando função limpar dados da TREEVIEW
+        def clear1(*clicked):
+            
+            if clicked:
+                self.TREEVIEW1.selection_remove(self.TREEVIEW1.focus())
+            
+
+        #criando função para mostrar dados selecionados
+        def display_data1(event):
+            
+            selected_item = self.TREEVIEW1.focus()
+            
+            if selected_item:
+                row = self.TREEVIEW1.item(selected_item)['values']
+                clear1()
+                
+            else:
+                pass
+            
+        
+        #Buscando dados aba listagem   
+        def fetch_itens2(tabela):
+            
+            connection = sql.connect(f"{DB_caminho}")
+            blinker = connection.cursor()
+            blinker.execute(f"SELECT * FROM {tabela}")
+            itens = blinker.fetchall() #me retorna uma lista de tuplas
+            connection.close()
+            
+            if self.check_var_Não_vencidos_listagem.get() == True:
+                
+                itens_Não_vencidos = []
+                for item in itens:
+                    if (mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) >= time():
+                        itens_Não_vencidos.append(item)
+            
+                return itens_Não_vencidos
+            
+            else:
+                
+                return itens
+    
+        #criando a função buscar para sistema de busca filtrado da aba "Listagem"
+        def buscar2(Filtro,Valor_Busca):
+            
+            connection = sql.connect(f"{DB_caminho}")
+            blinker = connection.cursor()
+            if Filtro == 'Id':
+                blinker.execute(f"SELECT * FROM {Table_Stock} WHERE {Filtro} LIKE '{Valor_Busca}%'")
+                itens = blinker.fetchall() 
+            else:
+                blinker.execute(f"SELECT * FROM {Table_Stock} WHERE {Filtro} LIKE '{Valor_Busca}%'")
+                itens = blinker.fetchall()
+            connection.close()
+            
+            if self.check_var_Não_vencidos_listagem.get() == True:
+                
+                itens_Não_vencidos = []
+                for item in itens:
+                    if (mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) >= time():
+                        itens_Não_vencidos.append(item)
+            
+                return itens_Não_vencidos
+            
+            else:
+                
+                return itens
+
+
+        #criando função para adicionar a TREEVIEW
+        def add_to_TREEVIEW1():
+            
+            global itens_
+            
+            dict_Filtro = {'ID':'Id',
+                           'Identif.':'Identificador',
+                           'Código':'Código',
+                           'Resp.':'Responsável',
+                           'Validade':'Validade',
+                           'Volume':'Volume'}
+            
+            if self.Busca_entry_listagem.get().upper() == 'VENCIDOS' or self.Filtro_entry_listagem.get() == 'Vencidos':
+                
+                if self.check_var_Não_vencidos_listagem.get() == False:
+                    itens_ = lista_vencidos()
+                    self.TREEVIEW1.delete(*self.TREEVIEW1.get_children())
+                    for item in itens_:
+                        self.TREEVIEW1.insert('', END, values=item)
+                    return len(itens)
+                else:
+                    messagebox.showerror('Erro ao buscar','Para buscar itens vencidos\ndesative a opção "✔️Não Vencidos".')
+                    return 0
+                
+            elif self.Filtro_entry_listagem.get() == 'Vence em X dias':
+                itens_ = lista_vencidos_em(int(self.Busca_entry_listagem.get().replace('dias','').strip()))
+                self.TREEVIEW1.delete(*self.TREEVIEW1.get_children())
+                for item in itens_:
+                    self.TREEVIEW1.insert('', END, values=item)
+                return len(itens)
+            
+            elif self.Filtro_entry_listagem.get() == 'Vence depois de X dias':
+                itens_ = lista_vencidos_daqui(int(self.Busca_entry_listagem.get().replace('dias','').strip()))
+                self.TREEVIEW1.delete(*self.TREEVIEW1.get_children())
+                for item in itens_:
+                    self.TREEVIEW1.insert('', END, values=item)
+                return len(itens)
+            
+            elif self.Filtro_entry_listagem.get() == '' or self.Busca_entry_listagem.get() == '':
+            
+                itens_ = fetch_itens2(Table_Stock)
+                self.TREEVIEW1.delete(*self.TREEVIEW1.get_children())
+                for item in itens_:
+                    self.TREEVIEW1.insert('', END, values=item)
+                        
+            
+            elif self.Filtro_entry_listagem.get() == 'Resp.':
+                itens_ = buscar2(dict_Filtro[self.Filtro_entry_listagem.get()], self.Busca_entry_listagem.get().strip().title())
+                self.TREEVIEW1.delete(*self.TREEVIEW1.get_children())
+                for item in itens_:
+                    self.TREEVIEW1.insert('', END, values=item)
+                return len(itens)
+            
+            elif self.Filtro_entry_listagem.get() == 'Volume':     
+                itens_ = buscar2(dict_Filtro[self.Filtro_entry_listagem.get()], self.Busca_entry_listagem.get().strip())
+                self.TREEVIEW1.delete(*self.TREEVIEW1.get_children())
+                for item in itens_:
+                    self.TREEVIEW1.insert('', END, values=item)
+                return len(itens)
+            
+            else:     
+                itens_ = buscar2(dict_Filtro[self.Filtro_entry_listagem.get()], self.Busca_entry_listagem.get().strip().upper())
+                self.TREEVIEW1.delete(*self.TREEVIEW1.get_children())
+                for item in itens_:
+                    self.TREEVIEW1.insert('', END, values=item)
+                return len(itens)
+        
+        
+        #criando frame da treeview
+        self.TREEVIEW_Frame1 = CTkFrame(self.tabview.tab("Listagem"))
+        self.TREEVIEW_Frame1.place(x=20,y=70)
+        
+        #criando um estilo para Treeview
+        self.style1 = Style(self.TREEVIEW_Frame1)
+        
+        self.style1.theme_use('clam')
+        self.style1.configure('Treeview', font = ("arial",9),foreground='black',background='silver',fieldbackround='black')
+        self.style1.map('Treeview', background=[('selected','#012563')])#'#036491')])
+        
+        #criando scrollbar para treeview
+        self.TREEVIEW_scrollbar1 = Scrollbar(self.TREEVIEW_Frame1)
+        self.TREEVIEW_scrollbar1.pack(side=RIGHT,fill=Y )
+        
+        # #criando Treeview
+        self.TREEVIEW1 = Treeview(self.TREEVIEW_Frame1,height=7,yscrollcommand=self.TREEVIEW_scrollbar1.set )
+        self.TREEVIEW1.pack()#place(x=18,y=285)
+        # #ativando o click da scrollbar
+        self.TREEVIEW_scrollbar1.configure(command=self.TREEVIEW1.yview)
+        
+        #criando colunas
+        self.TREEVIEW1['columns'] = ('Identif.','ID','Código','Validade','Responsável','Volume')
+        self.TREEVIEW1.column('#0', width=0, stretch=NO)
+        self.TREEVIEW1.column('Identif.',anchor=CENTER, width=70)
+        self.TREEVIEW1.column('ID',anchor=CENTER, width=102)
+        self.TREEVIEW1.column('Código',anchor=CENTER, width=110)
+        self.TREEVIEW1.column('Responsável',anchor=CENTER, width=132)
+        self.TREEVIEW1.column('Validade',anchor=CENTER, width=112)
+        self.TREEVIEW1.column('Volume',anchor=CENTER, width=101)
+        
+        #inserindo nome das colunas
+        self.TREEVIEW1.heading('Identif.', text='Identif.')
+        self.TREEVIEW1.heading('ID', text='ID')
+        self.TREEVIEW1.heading('Código', text='Código')
+        self.TREEVIEW1.heading('Responsável', text='Responsável')
+        self.TREEVIEW1.heading('Validade', text='Validade')
+        self.TREEVIEW1.heading('Volume', text='Volume')
+        
+        
+        self.TREEVIEW1.bind('<ButtonRelease>', display_data1)
+        
+        self.add_to_Treeview_button1 = ctk.CTkButton(self.tabview.tab("Listagem"),command = add_to_TREEVIEW1())
+        
+        #criando função gatilho para botão de busca
+        def busca_button_listagem():
+            
+            lista_filtro = ['ID','Vencidos','Vence em','Vence depois de','Identif.','Código','Resp.','Validade','Volume']
+            
+            if self.Busca_entry_listagem.get().upper() == 'VENCIDOS' or self.Filtro_entry_listagem.get() == 'Vencidos':
+                resultado = add_to_TREEVIEW1()
+                messagebox.showinfo('Resultado da busca', f'Foram encontrados {resultado} \nitens vencidos.')
+                
+            elif self.Filtro_entry_listagem.get() == 'Vence em X dias':
+                if self.Busca_entry_listagem.get().replace('dias','').strip().isnumeric() == True: 
+                    busca = self.Busca_entry_listagem.get().replace('dias','').strip()
+                    resultado = add_to_TREEVIEW1()
+                    if resultado > 1:
+                        messagebox.showinfo('Resultado da busca', f'Foram encontrados {resultado} \nitens que vencerão nos\npróximos {busca} dias.')
+                    elif resultado == 0:
+                        messagebox.showinfo('Resultado da busca', 'Nenhum item foi encontrado.')
+                    else:
+                        messagebox.showinfo('Resultado da busca', f'Foi encontrado apenas 1 \nitem que vencerá nos\npróximos {busca} dias.')
+                
+                else:
+                    messagebox.showerror('Erro ao buscar','Por favor, degite um número de dias\nválido para realizar a busca.')
+            
+            elif self.Filtro_entry_listagem.get() == 'Vence depois de X dias':
+                if self.Busca_entry_listagem.get().replace('dias','').strip().isnumeric() == True: 
+                    busca = self.Busca_entry_listagem.get().replace('dias','').strip()
+                    resultado = add_to_TREEVIEW1()
+                    
+                    if resultado > 1:
+                        messagebox.showinfo('Resultado da busca', f'Foram encontrados {resultado} \nitens que vencerão\ndepois de {busca} dias daqui.')
+                    elif resultado == 0:
+                        messagebox.showinfo('Resultado da busca', 'Nenhum item foi encontrado.')
+                    else:
+                        messagebox.showinfo('Resultado da busca', f'Foi encontrado apenas 1 \nitem que vencerá\ndepois de {busca} dias daqui.')
+                
+                else:
+                    messagebox.showerror('Erro ao buscar','Por favor, degite um número de dias\nválido para realizar a busca.')
+            
+            elif self.Filtro_entry_listagem.get() in lista_filtro and self.Busca_entry_listagem.get() != '':
+                resultado = add_to_TREEVIEW1()
+                
+                if resultado != 0 and self.Filtro_entry_listagem.get() != 'ID':
+                    if resultado != 1:
+                        messagebox.showinfo('Resultado da busca', f'Foram encontrados {resultado} itens.')
+                    else:
+                        messagebox.showinfo('Resultado da busca', f'Apenas 1 item foi encontrado.')
+                        
+                elif resultado != 0 and self.Filtro_entry_listagem.get() == 'ID':  
+                    pass
+                
+                else:
+                    messagebox.showinfo('Resultado da busca', 'Nenhum item foi encontrado.')
+                    
+            else:
+                messagebox.showinfo('Busca vazia', 'Por favor, digite sua pesquisa\nna barra de busca e selecione\num dos filtros listados.')
+        
+        
+        
+        #criando botão de busca para montar lista
+        self.Busca_Button_listagem = ctk.CTkButton(self.tabview.tab("Listagem"),text='🔍',text_color = 'black',command = busca_button_listagem , 
+                                font=("arial",18), height=35, width=35,corner_radius=8, border_color='silver',
+                                border_width=1.5, fg_color = 'silver', hover_color ='white'  ) 
+        self.Busca_Button_listagem.place(x=18+208+51.25+x_var,y=25)
+        
+        #criando função para limpar tudo
+        def clear_all_listagem():
+            
+            self.Filtro_entry_listagem.set('')
+            self.Busca_entry_listagem.delete(0,END)
+            self.TREEVIEW1.selection_remove(self.TREEVIEW1.focus())
+            self.TREEVIEW2.selection_remove(self.TREEVIEW2.focus())
+            add_to_TREEVIEW1()
+        
+        #criando botão limpar na aba listagem
+        self.LIMPAR_Button_listagem = ctk.CTkButton(self.tabview.tab("Listagem"),text='✨Limpar',text_color='black',command = clear_all_listagem ,  
+                                font=("arial",11), height=20, width=30,corner_radius=8, border_width=1.5 ,#border_color='',
+                                fg_color = '#e6a902', hover_color ='#b88702'  )#fg_color = 'silver', hover_color ='white')
+        self.LIMPAR_Button_listagem.place(x=205,y=0)
+        
+        
+        
+        
+        ####  CRIANDO TREEVIEW2 PARA ABA "Listagem"  #################################################
+        
+        #criando função limpar dados da TREEVIEW
+        def clear2(*clicked):
+            
+            if clicked:
+                self.TREEVIEW2.selection_remove(self.TREEVIEW.focus())
+            
+        
+            
+        #criando função para adicionar itens a TREEVIEW2
+        def add_to_TREEVIEW2():
+                
+                global listagem, listagem_ID
+                
+                selected_item = self.TREEVIEW1.focus()
+                row = self.TREEVIEW1.item(selected_item)['values'][:6]
+                
+                try:
+                    if row[1] not in listagem_ID: 
+                        
+                        self.TREEVIEW2.delete(*self.TREEVIEW2.get_children())
+                        listagem.append(row)
+                        listagem_ID.append(row[1])
+                        for item in listagem:
+                            self.TREEVIEW2.insert('', END, values=item)
+                    
+                    else:
+                        
+                        messagebox.showerror('Erro ao adicionar', 'Só é possível adicionar itens ainda\nnão adicionados a sua lista.\n\nPor favor, selecione outro item.')
+                except:
+                    pass
+        
+        
+        #criando função para adicionar itens a TREEVIEW2
+        def delete_from_TREEVIEW2():
+                
+                selected_item = self.TREEVIEW2.focus()
+                row = self.TREEVIEW2.item(selected_item)['values']
+                
+                if len(listagem_ID) == 0:
+                    
+                    messagebox.showinfo('Erro ao excluir', 'Ainda não há itens adicionados a sua lista.')
+    
+                elif len(row) != 0:
+                    indice = listagem_ID.index(row[1])
+                    self.TREEVIEW2.delete(*self.TREEVIEW2.get_children())
+                    listagem.pop(indice)
+                    listagem_ID.pop(indice)
+                    for item in listagem:
+                        self.TREEVIEW2.insert('', END, values=item)
+                        
+                else:
+                    
+                    messagebox.showerror('Erro ao excluir', 'Por favor selecione o item que\ndeseja remover da lista.')
+        
+       
+        
+       #criando frame da treeview
+        self.TREEVIEW_Frame2 = CTkFrame(self.tabview.tab("Listagem"))
+        self.TREEVIEW_Frame2.place(x=20,y=285)
+        
+        #criando um estilo para Treeview
+        self.style2 = Style(self.TREEVIEW_Frame2)
+        
+        self.style2.theme_use('clam')
+        self.style2.configure('Treeview', font = ("arial",9),foreground='black',background='silver',fieldbackround='black')
+        self.style2.map('Treeview', background=[('selected','#012563')])#'#036491')])
+        
+        #criando scrollbar para treeview
+        self.TREEVIEW_scrollbar2 = Scrollbar(self.TREEVIEW_Frame2)
+        self.TREEVIEW_scrollbar2.pack(side=RIGHT,fill=Y )
+        
+        # #criando Treeview
+        self.TREEVIEW2 = Treeview(self.TREEVIEW_Frame2,height=7,yscrollcommand=self.TREEVIEW_scrollbar2.set )
+        self.TREEVIEW2.pack()#place(x=18,y=285)
+        # #ativando o click da scrollbar
+        self.TREEVIEW_scrollbar2.configure(command=self.TREEVIEW2.yview)
+        
+        #criando colunas
+        self.TREEVIEW2['columns'] = ('Identif.','ID','Código','Validade','Responsável','Volume')
+        self.TREEVIEW2.column('#0', width=0, stretch=NO)
+        self.TREEVIEW2.column('Identif.',anchor=CENTER, width=70)
+        self.TREEVIEW2.column('ID',anchor=CENTER, width=102)
+        self.TREEVIEW2.column('Código',anchor=CENTER, width=110)
+        self.TREEVIEW2.column('Responsável',anchor=CENTER, width=132)
+        self.TREEVIEW2.column('Validade',anchor=CENTER, width=112)
+        self.TREEVIEW2.column('Volume',anchor=CENTER, width=101)
+        
+        #inserindo nome das colunas
+        self.TREEVIEW2.heading('Identif.', text='Identif.')
+        self.TREEVIEW2.heading('ID', text='ID')
+        self.TREEVIEW2.heading('Código', text='Código')
+        self.TREEVIEW2.heading('Responsável', text='Responsável')
+        self.TREEVIEW2.heading('Validade', text='Validade')
+        self.TREEVIEW2.heading('Volume', text='Volume')
+        
+        
+        self.TREEVIEW2.bind('<ButtonRelease>')
+        
+        # self.add_to_Treeview_button1 = ctk.CTkButton(self.tabview.tab("Listagem"),command = add_to_TREEVIEW())
+        
+        #criando label para designar a TREEVIEW de lista da aba "listagem"
+        self.Label_Listagem = ctk.CTkLabel(self.tabview.tab('Listagem'),text='📝',font=("helvitica",20,'bold'))
+        self.Label_Listagem.place(x=20,y=252.5)
+        self.Label_Listagem_text = ctk.CTkLabel(self.tabview.tab('Listagem'),text='Lista',font=("helvitica",20,'bold'))
+        self.Label_Listagem_text.place(x=43,y=257)
+        self.Label_Listagem_text = ctk.CTkLabel(self.tabview.tab('Listagem'),text='|',font=("helvitica",37))
+        self.Label_Listagem_text.place(x=195,y=238.5)
+        
+        #criando botão para adicionar itens a lista
+        self.Adicionar = ctk.CTkButton(self.tabview.tab('Listagem'),text='➕',command = add_to_TREEVIEW2 , 
+                                font=("helvitica",18,'bold'), height=30, width=30,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = '#033354',hover_color = '#054875')
+        self.Adicionar.place(x=140,y=247)
+        
+        #criando botão para excluir itens a lista
+        self.Excluir = ctk.CTkButton(self.tabview.tab('Listagem'),text='➖',command = delete_from_TREEVIEW2 , 
+                                font=("helvitica",18,'bold'), height=30, width=30,corner_radius=8,border_width=1.5 ,#border_color='',
+                                fg_color = '#b50404', hover_color ='#e30202')
+        self.Excluir.place(x=213,y=247)
+        
+        
+        #crianção fiunção para geração de lista de itens separada por responsáveis
+        def PDF_listagem_Gen(data):
+            
+            try:
+                caminho = filedialog.askdirectory(title = "Selecione sua pasta de destino")
+            
+            
+                f = 25.4/72
+                
+                #criando função para eração de tabelas
+                def Table_Gen(data):
+                    
+                    
+                    
+                    cabeçalho = ['Idf.','ID','Código','Validade','Responsável','Volume','Status']
+                    
+                    data.insert(0,cabeçalho)
+                    
+                    
+                    list_height_row = [6/f]*(len(data)-1)
+                    list_height_row.insert(0, 9/f)
+                    
+                    lenght = 182/f
+                    
+                    head_color = colors.toColor('rgba(0, 115, 153, 0.9)')
+                    
+                    column_width_list = [lenght*0.06,lenght*0.11,lenght*0.19,
+                                         lenght*0.13,lenght*0.22,lenght*0.16,
+                                         lenght*0.14]
+                    
+                    Tabela = Table(data = data,colWidths=column_width_list,rowHeights=list_height_row)
+                    
+                    Tabela.setStyle([('GRID',(0,0),(-1,-1),0.5,'GREY'),
+                                      ('BACKGROUND',(0,0),(-1,0),head_color),
+                                      ('TEXTCOLOR',(0,0),(-1,0),'white'),
+                                      ('FONTSIZE',(0,0),(-1,0),12),
+                                      ('FONTNAME',(0,0),(-1,0),'Helvetica-Bold'),
+                                      ('ALIGN',(0,0),(-1,-1),'CENTER'),
+                                      ('VALIGN',(0,0),(-1,-1),'MIDDLE')
+                                      ])
+                    
+                    return Tabela
+                
+                
+                #criando função para geração de tabelas sem cabeçalho
+                def Table_Gen_without_head(data):
+                    
+                    
+                    
+                    # cabeçalho = ['Idf.','ID','Código','Validade','Revalidação','Volume','Status','R','D']
+                    
+                    # data.insert(0,cabeçalho)
+                    
+                    
+                    list_height_row = [6/f]*(len(data))
+                    # list_height_row.insert(0, 9/f)
+                    
+                    lenght = 182/f
+                    
+                    # head_color = colors.toColor('rgba(0, 115, 153, 0.9)')
+                    
+                    column_width_list = [lenght*0.06,lenght*0.11,lenght*0.19,
+                                         lenght*0.13,lenght*0.22,lenght*0.16,
+                                         lenght*0.14]
+                    
+                    Tabela = Table(data = data,colWidths=column_width_list,rowHeights=list_height_row)
+                    
+                    Tabela.setStyle([('GRID',(0,0),(-1,-1),0.5,'GREY'),
+                                      # ('BACKGROUND',(0,0),(-1,0),head_color),
+                                      # ('TEXTCOLOR',(0,0),(-1,0),'white'),
+                                      # ('FONTSIZE',(0,0),(-1,0),12),
+                                      # ('FONTNAME',(0,0),(-1,0),'Helvetica-Bold'),
+                                      ('ALIGN',(0,0),(-1,-1),'CENTER'),
+                                      ('VALIGN',(0,0),(-1,-1),'MIDDLE')
+                                      ])
+                    
+                    return Tabela
+                
+                filename = f'{caminho}/Relatório de Armazenamento -  {str(datetime.today())[:19].replace(":",".")} - {getlogin()}.pdf'
+                    
+                pdf = canvas.Canvas(filename,pagesize = A4)
+                
+                
+                today = str(datetime.today())[:11].split('-')
+                
+                pdf.setLineWidth(0.7)
+                pdf.setStrokeColorRGB(0.525, 0.525, 0.525)
+                pdf.drawBoundary(1, 10/f, 842-(10/f), 595-(20/f), -75)
+                pdf.drawBoundary(1, 10/f+(595-(20/f))-(595-(20/f))*0.30, 842-(10/f), (595-(20/f))*0.30, -75/2)
+                pdf.drawImage('PPG2.jpg',20/f+(595-(20/f))-(595-(20/f))*0.30, 842-(12/f), (595-(20/f))*0.20, -55/2)
+                # print(20/f+(595-(20/f))-(595-(20/f))*0.30, 842-(12/f), (595-(20/f))*0.20, -55/2)
+                pdf.drawBoundary(1, 10/f+(595-(20/f))-(595-(20/f))*0.30, 842-(10/f)-75/2, (595-(20/f))*0.30, -75/2)
+                pdf.setFillColorRGB(0.525, 0.525, 0.525)
+                pdf.setFont('Helvetica-Bold',23)
+                pdf.drawString(14/f, 780, "LISTA DE ITENS DO MEZANINO")
+                pdf.setFont('Helvetica-Bold',18)
+                pdf.drawString(14/f, 755, "Seleção Manual")
+                pdf.setFont('Helvetica-Bold',10)
+                pdf.drawString(410,765, "Data de Geração:")
+                pdf.setFont('Helvetica-Bold',17)
+                pdf.drawString(435,745, f"{today[2]+'/ '+today[1]+' / '+today[0]}")
+                pdf.setFont('Helvetica-Bold',12)
+                pdf.drawString(14/f, 720, "Descrição de termos:")
+                pdf.setFont('Helvetica',11)
+                pdf.drawString(14/f, 705, 'Status "Ok": itens dentro da validade sem qualquer ação necessária.')
+                pdf.drawString(14/f, 690, 'Status "V. em 15 dias": itens que vencem dentro de 15 dias e necessitam de ação preventiva imediata.')
+                pdf.drawString(14/f, 675, 'Status "Vencido": itens com data de validade expirada que necessitam de ação corretiva urgente!')
+                
+                pdf.line(10/f,  842-180, 597-10.8/f, 842-180)
+                
+                y_size_Resp = 18
+                y_size_linha = 12
+                y_space = 33
+                
+                count = 0
+                var = 180
+                
+                count_page = 1
+                
+                plenty_space = 842-(20/f)-var
+                pdf.setLineWidth(1.5)
+                pdf.setStrokeColorRGB(0,0,0)
+                pdf.line(13.5/f, 841.5-((13.5+2)/f+12)-var, 597-13.5/f, 841.5-((13.5+2)/f+12)-var) 
+                pdf.setFont('Helvetica-Bold',23)
+                pdf.setFillColorRGB(0.525, 0.525, 0.525)
+                if len(data) != 1:
+                    pdf.drawString(14/f, 792-var, f"Lista com {len(data)} itens")
+                else:
+                    pdf.drawString(14/f, 792-var, f"Lista com apenas {len(data)} item")
+                # pdf.drawString(14/f+190, 792-var, f"{name[:29]}")
+                
+                pdf.setLineWidth(1.5)
+                pdf.setStrokeColorRGB (0.525, 0.525, 0.525)
+                pdf.line(13.5/f-1,841.5-((13.5+2)/f+12)+0.5-var, 597-13.5/f, 841.5-((13.5+2)/f+12)+0.50-var) 
+                pdf.setLineWidth(0.7)
+                pdf.setStrokeColorRGB(0.525, 0.525, 0.525)
+                pdf.drawBoundary(1, 10/f, 842-(10/f), 595-(20/f), -(842-(20/f)))
+                pdf.setFont('Helvetica',12)
+                pdf.setFillColorRGB(0.525, 0.525, 0.525)
+                pdf.drawString(595-(11.7/f), 10, f"{count_page}")
+                
+                
+            
+                count += 1 
+                
+                
+                count_table_split = 0
+                
+                while True:
+                    
+                    if count_table_split != 0:
+                        
+                        pdf.showPage()
+                        count_page += 1
+                        pdf.setLineWidth(0.7)
+                        pdf.setStrokeColorRGB(0.525, 0.525, 0.525)
+                        pdf.drawBoundary(1, 10/f, 842-(10/f), 595-(20/f), -(842-(20/f)))
+                        pdf.setFont('Helvetica',12)
+                        pdf.setFillColorRGB(0.525, 0.525, 0.525)
+                        pdf.drawString(595-(11.7/f), 10, f"{count_page}")
+                        
+                        var = 0
+                        
+                        plenty_space = 842-(20/f)-var-6/f
+                        
+                        total_object_size  = (6/f)*(len(data))
+                    
+                        if total_object_size > plenty_space :
+                            
+                            list_len = int(((plenty_space))//(6/f))
+                            # print(list_len)
+                            # print(5%2)
+                        
+                            table = Table_Gen_without_head(data[:list_len])
+                            
+                            table_size = (6/f)*(len(data[:list_len]))
+                            
+                            table.wrapOn(pdf, 0, 0) 
+                            table.drawOn(pdf, 13.5/f, (842-table_size)-((13.5)/f)-var)
+                            # print(var)
+                            
+                            data = data[list_len:]
+                            
+                            # pdf.showPage()
+                            
+                            count_table_split += 1
+                            
+                            # plenty_space = 842-(20/f)-table_size
+                            
+                            if data == []:
+                                break
+                        else:
+                            
+                            list_len = int((plenty_space)//(6/f))
+                            # print(list_len)
+                        
+                            table = Table_Gen_without_head(data[:list_len])
+                            
+                            table_size = (6/f)*(len(data[:list_len]))
+                            
+                            table.wrapOn(pdf, 0, 0) 
+                            table.drawOn(pdf, 13.5/f, (842-table_size)-((13.5)/f)-var)#133
+                            # print(var)
+                            
+                            data = data[list_len:]
+                            
+                            count_table_split += 1
+                            
+                            plenty_space = 842-(20/f)-table_size
+                            
+                            if data == []:
+                                break
+                            
+                        
+                    else:
+                        
+                        total_object_size  = (6/f)*(len(data)-1)+9/f + y_size_linha + y_size_Resp + y_space
+                    
+                        if total_object_size > plenty_space :
+                            
+                            list_len = int(((plenty_space)-3/f-63-20)//(6/f))
+                            # print(list_len)
+                            # print(5%2)
+                        
+                            table = Table_Gen(data[:list_len])
+                            
+                            table_size = (6/f)*(len(data[:list_len]))+9/f
+                            
+                            if count != 1:
+                                table.wrapOn(pdf, 0, 0) 
+                                table.drawOn(pdf, 13.5/f, (842-table_size)-(842-plenty_space)-40)
+                            else:
+                                table.wrapOn(pdf, 0, 0) 
+                                table.drawOn(pdf, 13.5/f, (842-table_size)-((13.5+2)/f+19)-var)
+                                
+                            data = data[list_len:]
+                            
+                            # pdf.showPage()
+                            
+                            count_table_split += 1
+                            
+                            if data == []:
+                                break
+                        else:
+                            
+                            list_len = int(((plenty_space)-3/f-63-20)//(6/f))
+                            # print(list_len)
+                            # print(5%2)
+                        
+                            table = Table_Gen(data[:list_len])
+                            
+                            table_size = (6/f)*(len(data[:list_len]))+9/f
+                            
+                            if count != 1:
+                                table.wrapOn(pdf, 0, 0) 
+                                table.drawOn(pdf, 13.5/f, (842-table_size)-(842-plenty_space)-40)
+                            else:
+                                table.wrapOn(pdf, 0, 0) 
+                                table.drawOn(pdf, 13.5/f, (842-table_size)-((13.5+2)/f+19)-var)
+                                
+                            data = data[list_len:]
+                            
+                            if count == 1: 
+                                plenty_space = plenty_space-table_size-(y_size_linha + y_size_Resp + y_space)+42
+                            else:
+                                plenty_space = plenty_space-table_size-(y_size_linha + y_size_Resp + y_space)+8
+                            
+                            count_table_split += 1
+                            
+                            if data == []:
+                                break
+                                
+                            
+                pdf.save()
+                
+                startfile(filename)
+                
+            except:
+                pass
+        
+        def Gen_listagem_PDF():
+            
+            if len(listagem_ID) != 0:
+            
+                data = []
+                count = 0
+                for item in listagem:
+                    if (mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= time():
+                        data.append(item[:7])
+                        data[count].append('Vencido')
+                        data[count][4] = data[count][4][:23]
+                        count += 1
+                        
+                    elif (((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) >= time()) 
+                        and ((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= (time() + (86400*15)))):
+                        data.append(item[:7])
+                        data[count].append('V. em 15 dias')
+                        data[count][4] = data[count][4][:23]
+                        count += 1
+                        
+                        
+                    else:
+                        data.append(item[:7])
+                        data[count].append('Ok')
+                        data[count][4] = data[count][4][:24]
+                        count += 1
+                
+                
+                PDF_listagem_Gen(data)
+            
+            else:
+                messagebox.showinfo('Não há itens listados', 'Ainda não há itens adicionados a sua lista.\n\nPor favor, adicione ao menos 1 item\npara gerar o documento.')
+        
+        #criando botão para gerar relatório PDF da aba listagem
+        self.Report_Gen_PDF = ctk.CTkButton(self.tabview.tab('Listagem'),text='Gerar PDF',command = Gen_listagem_PDF , 
+                                font=("helvitica",13,'bold'), height=30, width=90,corner_radius=8,border_width=1.5 ,#border_color='',
+                                text_color = 'white', fg_color = '#033354',hover_color = '#054875')
+        self.Report_Gen_PDF.place(x=485,y=247)
+        
+        
+        #criando função para escrever arquivo excel
+        def Excel_write():
+            
+            global listagem,listagem_ID
+            
+            if len(listagem_ID) != 0:
+                
+                caminho = filedialog.askdirectory(title = "Selecione sua pasta de destino")
+            
+                data = []
+                count = 0
+                for item in listagem:
+                    if (mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= time():
+                        data.append(item[:7])
+                        data[count].append('Vencido')
+                        data[count][4] = data[count][4][:23]
+                        count += 1
+                        
+                    elif (((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) >= time()) 
+                        and ((mktime(datetime.strptime(item[3], "%d/%m/%Y").timetuple())+86399) <= (time() + (86400*15)))):
+                        data.append(item[:7])
+                        data[count].append('V. em 15 dias')
+                        data[count][4] = data[count][4][:23]
+                        count += 1
+                        
+                        
+                    else:
+                        data.append(item[:7])
+                        data[count].append('Ok')
+                        data[count][4] = data[count][4][:24]
+                        count += 1
+                
+            
+                connection = sql.connect(f"{DB_caminho}")
+                blinker = connection.cursor()
+                count = 0
+                for ID in listagem_ID:
+                    blinker.execute(f"SELECT Obs FROM {Table_Stock} WHERE id = {ID}")
+                    data[count].append(blinker.fetchone()[0]) #me retorna uma lista de tuplas
+                    count += 1
+                connection.close()
+                
+                cabeçalho = ['Idf.','ID','Código','Validade','Responsável','Volume','Status','OBS']
+                
+                data.insert(0,cabeçalho)
+                
+                filename = f'{caminho}/Relatório de Armazenamento -  {str(datetime.today())[:19].replace(":",".")} - {getlogin()}.xlsx'
+                workbook = Workbook(filename)
+                worksheet = workbook.add_worksheet('Lista de Itens')
+                worksheet.hide_gridlines(2)
+                format1 = workbook.add_format({'bold': True,'align': 'center',
+                							  'valign':   'vcenter','border': 1,'border_color':'#9e9e9d',
+                							  'fg_color': '#007399','font_color': '#f2f2f2'})
+                format2 = workbook.add_format({'border': 1,'border_color':'#9e9e9d'})
+                
+                for n in range(0,len(data)):
+                    for i in range(0,len(data[n])):
+                        if n != 0:
+                            worksheet.write(n,i,f'{data[n][i]}',format2)
+                        else:
+                            worksheet.write(n,i,f'{data[n][i]}',format1)  
+                
+                worksheet.autofit()
+                workbook.close()
+                
+                startfile(filename)
+                
+            else:
+                messagebox.showinfo('Não há itens listados', 'Ainda não há itens adicionados a sua lista.\n\nPor favor, adicione ao menos 1 item\npara gerar o documento.')
+             
+        
+        #criando botão para gerar relatório em Xlsx da aba listagem
+        self.Report_Gen_Xlsx = ctk.CTkButton(self.tabview.tab('Listagem'),text='Gerar Xlsx',command = Excel_write, 
+                                font=("helvitica",13,'bold'), height=30, width=30,corner_radius=8,border_width=1.5 ,#border_color='',
+                                text_color = 'white', fg_color = '#02783b', hover_color ='#179c57')
+        self.Report_Gen_Xlsx.place(x=580,y=247)
+        
+        def delete_lista():
+            
+            global listagem,listagem_ID
+            listagem = []
+            listagem_ID = []
+            self.TREEVIEW2.delete(*self.TREEVIEW2.get_children())
+            
+            # for item in listagem:
+            #     self.TREEVIEW2.insert('', END, values=item)
+        
+        x_bt = 14
+        #criando botão para excluir lista da aba listagem
+        self.Excluir_lista = ctk.CTkButton(self.tabview.tab('Listagem'),text='❌Excluir',command = delete_lista , 
+                                font=("helvitica",13,'bold'), height=30, width=30,corner_radius=8,border_width=1.5 ,#border_color='',
+                                text_color = 'white', fg_color = 'grey', hover_color ='#a1a1a1')
+        self.Excluir_lista.place(x=357+x_bt,y=247)
+        
+        
+        def add_Todos():
+            
+            global listagem,listagem_ID,itens_
+            
+            dict_Filtro = {'ID':'Id',
+                           'Identif.':'Identificador',
+                           'Código':'Código',
+                           'Resp.':'Responsável',
+                           'Validade':'Validade',
+                           'Volume':'Volume'}
+            
+            lista = []
+            n = 0
+            while lista == [] and n < len(itens_):
+                if itens_[n][1] in listagem_ID:
+                    lista.append(n)
+                n += 1
+                
+                
+            if lista == []:
+            
+            
+                if self.Busca_entry_listagem.get().upper() == 'VENCIDOS' or self.Filtro_entry_listagem.get() == 'Vencidos':
+                    
+                    if self.check_var_Não_vencidos_listagem.get() == False:
+                        itens = lista_vencidos()
+                        listagem = listagem + tuple_to_list2(itens)
+                        self.TREEVIEW2.delete(*self.TREEVIEW2.get_children())
+                        listagem_ID = []
+                        for dado in listagem:
+                            listagem_ID.append(dado[1])
+                        for item in listagem:
+                            self.TREEVIEW2.insert('', END, values=item)
+                            
+                        if len(listagem_ID) != 1:
+                            messagebox.showinfo('Adicionado com sucesso!',f'Foram adicionados {len(listagem_ID)} itens a lista')
+                        else:       
+                            messagebox.showinfo('Adicionado com sucesso!',f'Foi adicionado {len(listagem_ID)} item a lista')
+                
+                    else:
+                        messagebox.showerror('Erro ao buscar','Para buscar itens vencidos\ndesative a opção "✔️Não Vencidos".')
+                        return 0
+                    
+                elif self.Filtro_entry_listagem.get() == 'Vence em X dias':
+                    itens = lista_vencidos_em(int(self.Busca_entry_listagem.get().replace('dias','').strip()))
+                    listagem = listagem + tuple_to_list2(itens)
+                    self.TREEVIEW2.delete(*self.TREEVIEW2.get_children())
+                    listagem_ID = []
+                    for dado in listagem:
+                        listagem_ID.append(dado[1])
+                    for item in listagem:
+                        self.TREEVIEW2.insert('', END, values=item)
+                    
+                    if len(listagem_ID) != 1:
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foram adicionados {len(listagem_ID)} itens a lista')
+                    else:       
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foi adicionado {len(listagem_ID)} item a lista')
+                
+                
+                elif self.Filtro_entry_listagem.get() == 'Vence depois de X dias':
+                    
+                    itens = lista_vencidos_daqui(int(self.Busca_entry_listagem.get().replace('dias','').strip()))
+                    listagem = listagem + tuple_to_list2(itens)
+                    self.TREEVIEW2.delete(*self.TREEVIEW2.get_children())
+                    listagem_ID = []
+                    for dado in listagem:
+                        listagem_ID.append(dado[1])
+                    for item in listagem:
+                        self.TREEVIEW2.insert('', END, values=item)
+                        
+                    if len(listagem_ID) != 1:
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foram adicionados {len(listagem_ID)} itens a lista')
+                    else:       
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foi adicionado {len(listagem_ID)} item a lista')
+            
+                elif self.Filtro_entry_listagem.get() == '' or self.Busca_entry_listagem.get() == '':
+                
+                    itens = fetch_itens2(Table_Stock)
+                    listagem = listagem + tuple_to_list2(itens)
+                    self.TREEVIEW2.delete(*self.TREEVIEW2.get_children())
+                    listagem_ID = []
+                    for dado in listagem:
+                        listagem_ID.append(dado[1])
+                    for item in listagem:
+                        self.TREEVIEW2.insert('', END, values=item)
+                    if len(listagem_ID) != 1:
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foram adicionados {len(listagem_ID)} itens a lista')
+                    else:       
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foi adicionado {len(listagem_ID)} item a lista')
+                    
+                elif self.Filtro_entry_listagem.get() == 'Resp.':
+                    itens = buscar2(dict_Filtro[self.Filtro_entry_listagem.get()], self.Busca_entry_listagem.get().strip().title())
+                    listagem = listagem + tuple_to_list2(itens)
+                    self.TREEVIEW2.delete(*self.TREEVIEW2.get_children())
+                    listagem_ID = []
+                    for dado in listagem:
+                        listagem_ID.append(dado[1])
+                    for item in listagem:
+                        self.TREEVIEW2.insert('', END, values=item)
+                        
+                    if len(listagem_ID) != 1:
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foram adicionados {len(listagem_ID)} itens a lista')
+                    else:       
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foi adicionado {len(listagem_ID)} item a lista')
+                
+                
+                elif self.Filtro_entry_listagem.get() == 'Volume':     
+                    itens = buscar2(dict_Filtro[self.Filtro_entry_listagem.get()], self.Busca_entry_listagem.get().strip())
+                    listagem = listagem + tuple_to_list2(itens)
+                    self.TREEVIEW2.delete(*self.TREEVIEW2.get_children())
+                    listagem_ID = []
+                    for dado in listagem:
+                        listagem_ID.append(dado[1])
+                    for item in listagem:
+                        self.TREEVIEW2.insert('', END, values=item)
+                        
+                    if len(listagem_ID) != 1:
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foram adicionados {len(listagem_ID)} itens a lista')
+                    else:       
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foi adicionado {len(listagem_ID)} item a lista')
+                
+                
+                else:     
+                    itens = buscar2(dict_Filtro[self.Filtro_entry_listagem.get()], self.Busca_entry_listagem.get().strip().upper())
+                    listagem = listagem + tuple_to_list2(itens)
+                    self.TREEVIEW2.delete(*self.TREEVIEW2.get_children())
+                    listagem_ID = []
+                    for dado in listagem:
+                        listagem_ID.append(dado[1])
+                    for item in listagem:
+                        self.TREEVIEW2.insert('', END, values=item)
+                        
+                    if len(listagem_ID) != 1:
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foram adicionados {len(listagem_ID)} itens a lista')
+                    else:       
+                        messagebox.showinfo('Adicionado com sucesso!',f'Foi adicionado {len(listagem_ID)} item a lista')
+            else:
+                messagebox.showerror('Erro ao adicionar', 'Só é possível adicionar itens ainda\nnão adicionados a sua lista.\n\nPor favor, selecione outro item.')
+            
+            # data = fetch_itens2(Table_Stock)
+            # listagem = tuple_to_list2(data)
+            # self.TREEVIEW2.delete(*self.TREEVIEW2.get_children())
+            # listagem_ID = []
+            # for dado in listagem:
+            #     listagem_ID.append(dado[1])
+            # for item in listagem:
+            #     self.TREEVIEW2.insert('', END, values=item)
+            
+        
+        
+        #criando botão para adicionar todos os itens a lista da aba listagem
+        self.Add_All_lista = ctk.CTkButton(self.tabview.tab('Listagem'),text='➕Todos',command = add_Todos , 
+                                font=("helvitica",13,'bold'), height=30, width=30,corner_radius=8,border_width=1.5 ,#border_color='',
+                                text_color = 'black', fg_color = 'silver', hover_color ='white'  )
+        self.Add_All_lista.place(x=278+x_bt,y=247)
+        
+
+if __name__ == "__main__":
+    aplicativo = App()
+    aplicativo.mainloop()
+
