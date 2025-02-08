@@ -178,3 +178,70 @@ messagebox.showinfo('Execussão bem sucedida!',f'Relatório enviado com sucesso!
 #     Kill TempFile
 #     RangeToHTML = HTMLContent
 # End Function
+######################################################
+Sub TESTE()
+'
+' TESTE Macro
+' Atualizando planilha
+'
+
+'
+    ActiveWorkbook.RefreshAll
+End Sub
+Sub Ocultando_Sheet()
+'
+' Ocultando_Sheet Macro
+'
+
+'
+    Sheets("Planilha1").Select
+    ActiveWindow.SelectedSheets.Visible = False
+End Sub
+
+Sub Protegendo_Sheet()
+'
+' Protegendo_Sheet Macro
+'
+
+'
+    ActiveWorkbook.Protect Password:="ncc1308", Structure:=True, Windows:=False
+End Sub
+
+Sub Protegendo_Sheets()
+'
+' Protegendo_Sheets Macro
+'
+    Dim fso As Object
+    Dim file As Object
+    Dim filePath As String
+    Dim fileContent As String
+    
+    ' Set file path
+    filePath = "C:\Users\User\Documents\Text.txt"
+    
+    ' Create FileSystemObject
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    ' Open the file
+    Set file = fso.OpenTextFile(filePath, 1) ' 1 = ForReading
+    
+    ' Read the file content
+    fileContent = file.ReadAll
+    
+    ' Close the file
+    file.Close
+    
+    ' Display the content (optional)
+    'MsgBox fileContent
+    
+    ' Clean up
+    Set file = Nothing
+    Set fso = Nothing
+    
+    
+    Worksheets("Planilha2").Protect Password:=fileContent, DrawingObjects:=True, Contents:=True, Scenarios:= _
+        False, AllowFormattingCells:=True, AllowFormattingColumns:=True, _
+        AllowFormattingRows:=True, AllowInsertingColumns:=True, AllowInsertingRows _
+        :=True, AllowInsertingHyperlinks:=True, AllowDeletingColumns:=True, _
+        AllowDeletingRows:=True, AllowSorting:=True, AllowUsingPivotTables:=True
+End Sub
