@@ -1,247 +1,50 @@
 
-from tkinter import messagebox
 
-# !pyinstaller -w --onefile Teste_Macro_execution.py
+HEAD = ['ORG','OP','GRUPO','CLASSE','PRODUTO','STATUS ORDEM','DATA CONCLUSAO','CLASSE ROTEIRO','DATA TRANSACAO','USUÁRIO DE CADASTRO','TRANSAÇÃO','TRANSACTION_ID','CATEG TIPO ITEM1','ITEM','SUBINVENTARIO','LOTE','QTDE PRIMARIA','UOM PRIMARIA','QUANTIDADE_KG','UOM KG','CONTRIBUIPARA RENDIMENTO','TOTAL CONSUMOS KG','TOTAL PRODUÇÃO_KG','PERDA_KG','% DE PERDA','TOTAL PRODUÇÃO LITROS']
 
 
-import win32com.client
+print(len(HEAD))
 
-# Abre o Excel
-excel = win32com.client.Dispatch("Excel.Application")
-excel.Visible = False # Define como True se você quiser ver o Excel sendo aberto C:/Users/User/Documents/P_Teste_Macros.xlsm
-# Abre o arquivo Excel
-workbook = excel.Workbooks.Open("C:/Users/User/Documents/P_Teste_Macros.xlsm")
-
-# Executa a macro
-excel.Application.Run('Módulo1.Protegendo_Sheets')
-# excel.Application.Run("NomeDaSuaMacro")
-# excel.Application.Run("NomeDaSuaMacro")
-# excel.Application.Run("NomeDaSuaMacro")
-
-# Salva e fecha o arquivo
-workbook.Save()
-workbook.Close()
-# Fecha o Excel
-# excel.Quit ()
+with open('C:/Users/User/.spyder-py3/Códigos_teste/Gerador de etiquetas/Teste_html_file/ARQ_Teste_Charged.html', 'r', encoding='UTF-8') as arq:
     
-messagebox.showinfo('Execussão bem sucedida!',f'Relatório enviado com sucesso!')
-
-##################### FIRST CODE ###############################
-
-# Sub SendEmailWithTable()
-#     Dim OutlookApp As Object
-#     Dim OutlookMail As Object
-#     Dim EmailBody As String
-#     Dim ws As Worksheet
-#     Dim rng As Range
-
-#     ' Set the worksheet and range
-#     Set ws = ThisWorkbook.Sheets("Sheet1") ' Change to your sheet name
-#     Set rng = ws.Range("A1:D10") ' Change to your table range
-
-#     ' Convert the table to HTML
-#     EmailBody = RangeToHTML(rng)
-
-#     ' Create Outlook application
-#     Set OutlookApp = CreateObject("Outlook.Application")
-#     Set OutlookMail = OutlookApp.CreateItem(0)
-
-#     ' Configure email details
-#     With OutlookMail
-#         .To = "recipient@example.com"
-#         .CC = "cc@example.com"
-#         .BCC = "bcc@example.com"
-#         .Subject = "Formatted Table in Email Body"
-#         .HTMLBody = "<p>Dear Recipient,</p>" & _
-#                     "<p>Here is the formatted table:</p>" & _
-#                     EmailBody & _
-#                     "<p>Best regards,</p><p>Your Name</p>"
-#         .Display ' Change to .Send to send automatically
-#     End With
-
-#     ' Clean up
-#     Set OutlookMail = Nothing
-#     Set OutlookApp = Nothing
-# End Sub
-
-# Function RangeToHTML(rng As Range) As String
-#     ' Exports the range as an HTML table
-#     Dim TempFile As String
-#     Dim TempWorkbook As Workbook
-#     Dim TempWorksheet As Worksheet
+    file = arq.read().split('\n')
     
-#     ' Create a temporary workbook
-#     TempFile = Environ$("temp") & "\TempHTMLFile.htm"
-#     Set TempWorkbook = Workbooks.Add
-#     Set TempWorksheet = TempWorkbook.Sheets(1)
-
-#     ' Copy range to the temporary sheet
-#     rng.Copy
-#     TempWorksheet.Cells(1, 1).PasteSpecial Paste:=xlPasteValuesAndNumberFormats
-#     TempWorksheet.Cells(1, 1).PasteSpecial Paste:=xlPasteFormats
-    
-#     ' Save as an HTML file
-#     TempWorkbook.PublishObjects.Add(xlSourceRange, TempFile, TempWorksheet.Name, rng.Address, xlHtmlStatic).Publish
-#     TempWorkbook.Close False
-    
-#     ' Read the HTML content
-#     Dim FileNum As Integer
-#     Dim HTMLContent As String
-#     FileNum = FreeFile
-#     Open TempFile For Input As FileNum
-#     HTMLContent = Input$(LOF(FileNum), FileNum)
-#     Close FileNum
-
-#     ' Clean up
-#     Kill TempFile
-#     RangeToHTML = HTMLContent
-# End Function
+    n = 0
+    for row in file:
+        
+        if row == '<tr class="c59">':
+        
+            file = file[(n+1):]
+            break    
+        n += 1
 
 
-##################### SENCOND CODE #############################
+lista = [HEAD]
+row_list = []
 
-# Sub SendEmailsWithTable()
-#     Dim OutlookApp As Object
-#     Dim OutlookMail As Object
-#     Dim EmailBody As String
-#     Dim wsTable As Worksheet, wsEmails As Worksheet
-#     Dim rng As Range, cell As Range
-#     Dim recipient As String
 
-#     ' Set the worksheets
-#     Set wsTable = ThisWorkbook.Sheets("Sheet1") ' Sheet with the formatted table
-#     Set wsEmails = ThisWorkbook.Sheets("Emails") ' Sheet with the email list
-
-#     ' Set the range for the table
-#     Set rng = wsTable.Range("A1:D10") ' Change this to your table range
-
-#     ' Convert table to HTML
-#     EmailBody = RangeToHTML(rng)
-
-#     ' Create Outlook application
-#     Set OutlookApp = CreateObject("Outlook.Application")
-
-#     ' Loop through each email in the list
-#     For Each cell In wsEmails.Range("A1:A100") ' Adjust the range to fit your list
-#         If cell.Value <> "" Then ' Ensure the cell is not empty
-#             recipient = cell.Value
+n = 0
+for row in file:
+    if row[:3] == '<td':
+        
+        # print(row)
+        
+        n += 1
+        
+        if row[-4:] == '/td>':
             
-#             ' Create a new email
-#             Set OutlookMail = OutlookApp.CreateItem(0)
+            row_list.append('')
             
-#             With OutlookMail
-#                 .To = recipient
-#                 .Subject = "Formatted Table in Email Body"
-#                 .HTMLBody = "<p>Dear Recipient,</p>" & _
-#                             "<p>Here is the formatted table:</p>" & _
-#                             EmailBody & _
-#                             "<p>Best regards,</p><p>Your Name</p>"
-#                 .Display ' Change to .Send to send automatically
-#             End With
-#         End If
-#     Next cell
-
-#     ' Clean up
-#     Set OutlookMail = Nothing
-#     Set OutlookApp = Nothing
-# End Sub
-
-# Function RangeToHTML(rng As Range) As String
-#     ' Converts a range to an HTML table
-#     Dim TempFile As String
-#     Dim TempWorkbook As Workbook
-#     Dim TempWorksheet As Worksheet
-    
-#     ' Create a temporary workbook
-#     TempFile = Environ$("temp") & "\TempHTMLFile.htm"
-#     Set TempWorkbook = Workbooks.Add
-#     Set TempWorksheet = TempWorkbook.Sheets(1)
-
-#     ' Copy range to temporary sheet
-#     rng.Copy
-#     TempWorksheet.Cells(1, 1).PasteSpecial Paste:=xlPasteValuesAndNumberFormats
-#     TempWorksheet.Cells(1, 1).PasteSpecial Paste:=xlPasteFormats
-    
-#     ' Save as an HTML file
-#     TempWorkbook.PublishObjects.Add(xlSourceRange, TempFile, TempWorksheet.Name, rng.Address, xlHtmlStatic).Publish
-#     TempWorkbook.Close False
-    
-#     ' Read the HTML content
-#     Dim FileNum As Integer
-#     Dim HTMLContent As String
-#     FileNum = FreeFile
-#     Open TempFile For Input As FileNum
-#     HTMLContent = Input$(LOF(FileNum), FileNum)
-#     Close FileNum
-
-#     ' Clean up
-#     Kill TempFile
-#     RangeToHTML = HTMLContent
-# End Function
-######################################################
-Sub TESTE()
-'
-' TESTE Macro
-' Atualizando planilha
-'
-
-'
-    ActiveWorkbook.RefreshAll
-End Sub
-Sub Ocultando_Sheet()
-'
-' Ocultando_Sheet Macro
-'
-
-'
-    Sheets("Planilha1").Select
-    ActiveWindow.SelectedSheets.Visible = False
-End Sub
-
-Sub Protegendo_Sheet()
-'
-' Protegendo_Sheet Macro
-'
-
-'
-    ActiveWorkbook.Protect Password:="ncc1308", Structure:=True, Windows:=False
-End Sub
-
-Sub Protegendo_Sheets()
-'
-' Protegendo_Sheets Macro
-'
-    Dim fso As Object
-    Dim file As Object
-    Dim filePath As String
-    Dim fileContent As String
-    
-    ' Set file path
-    filePath = "C:\Users\User\Documents\Text.txt"
-    
-    ' Create FileSystemObject
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    
-    ' Open the file
-    Set file = fso.OpenTextFile(filePath, 1) ' 1 = ForReading
-    
-    ' Read the file content
-    fileContent = file.ReadAll
-    
-    ' Close the file
-    file.Close
-    
-    ' Display the content (optional)
-    'MsgBox fileContent
-    
-    ' Clean up
-    Set file = Nothing
-    Set fso = Nothing
-    
-    
-    Worksheets("Planilha2").Protect Password:=fileContent, DrawingObjects:=True, Contents:=True, Scenarios:= _
-        False, AllowFormattingCells:=True, AllowFormattingColumns:=True, _
-        AllowFormattingRows:=True, AllowInsertingColumns:=True, AllowInsertingRows _
-        :=True, AllowInsertingHyperlinks:=True, AllowDeletingColumns:=True, _
-        AllowDeletingRows:=True, AllowSorting:=True, AllowUsingPivotTables:=True
-End Sub
+        elif row[40:42] == '21' or row[40:42] == '38' or row[40:42] == '42':
+            
+            row_list.append(row[98:].rstrip('</b></span><span class="c61"><b>‬</b></span></p>'))
+        
+        else:
+            row_list.append(row[65:].rstrip('</b></span></p>'))
+            
+        if n == 26:
+            
+            lista.append(row_list)
+            row_list = []
+            n = 0
+        
